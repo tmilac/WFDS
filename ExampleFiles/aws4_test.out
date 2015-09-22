@@ -1,0 +1,713 @@
+
+ Fire Dynamics Simulator
+
+ Compilation Date : Fri, 03 Feb 2012
+ Version          : 6.0.0 Parallel
+
+ OpenMP Disabled
+
+ SVN Revision No. : 9977
+
+ Job TITLE        : 
+ Job ID string    : aws4_test
+
+
+ Grid Dimensions, Mesh     1
+
+   Cells in the X Direction           100
+   Cells in the Y Direction           100
+   Cells in the Z Direction            50
+
+
+ Physical Dimensions, Mesh     1
+
+   Length (m)                     1000.000
+   Width  (m)                     1000.000
+   Height (m)                      200.000
+   Initial Time Step (s)             0.824
+
+ Grid Dimensions, Mesh     2
+
+   Cells in the X Direction           100
+   Cells in the Y Direction           100
+   Cells in the Z Direction            50
+
+
+ Physical Dimensions, Mesh     2
+
+   Length (m)                     1000.000
+   Width  (m)                     1000.000
+   Height (m)                      200.000
+   Initial Time Step (s)             0.824
+
+ Grid Dimensions, Mesh     3
+
+   Cells in the X Direction           100
+   Cells in the Y Direction           100
+   Cells in the Z Direction            50
+
+
+ Physical Dimensions, Mesh     3
+
+   Length (m)                     1000.000
+   Width  (m)                     1000.000
+   Height (m)                      200.000
+   Initial Time Step (s)             0.824
+
+ Grid Dimensions, Mesh     4
+
+   Cells in the X Direction           100
+   Cells in the Y Direction           100
+   Cells in the Z Direction            50
+
+
+ Physical Dimensions, Mesh     4
+
+   Length (m)                     1000.000
+   Width  (m)                     1000.000
+   Height (m)                      200.000
+   Initial Time Step (s)             0.824
+
+
+ Miscellaneous Parameters
+
+   Simulation Start Time (s)          0.0
+   Simulation End Time (s)           30.0
+   LES Calculation
+   Deardorff Model
+   Turbulent Prandtl Number          0.50
+   Ambient Temperature (C)          20.00
+
+
+ Mass Fraction Transformation Matrix to Convert Species Mixtures (Columns) to Primitive Species (Rows)
+
+                         AIR     
+   AIR                   1.000000
+
+
+ Primitive Species Information
+
+   AIR                           
+   Gas Species
+   Lumped species component only
+   Molecular Weight (g/mol)       28.84852
+   Ambient Density (kg/m^3)       1.199
+
+
+ Tracked (Lumped) Species Information
+
+   AIR                           
+   Background Species
+   Molecular Weight (g/mol)       28.84852
+   Ambient Density (kg/m^3)       1.199
+   Initial Mass Fraction          1.000
+
+   Sub Species                    Mass Fraction     Mole Fraction
+   AIR                            1.000000E+00      1.000000E+00
+ 
+   Viscosity (kg/m/s)   Ambient:  1.81E-05
+                          500 C:  3.50E-05
+                         1000 C:  4.84E-05
+                         1500 C:  6.00E-05
+   Therm. Cond. (W/m/K) Ambient:  3.64E-02
+                          500 C:  7.65E-02
+                         1000 C:  1.15E-01
+                         1500 C:  1.49E-01
+   Spec. Heat (J/kg/K)  Ambient:  1.01E+03
+                          500 C:  1.09E+03
+                         1000 C:  1.19E+03
+                         1500 C:  1.24E+03
+   Diff. Coeff. (m^2/s) Ambient:  2.00E-05
+                          500 C:  1.04E-04
+                         1000 C:  2.38E-04
+                         1500 C:  4.12E-04
+
+
+ Material Information
+
+
+ Surface Conditions
+
+   0 INERT (DEFAULT)
+
+   1 INFLOW
+     Normal Velocity (m/s)         -2.000
+     Mixture  0 Mass Fraction         1.000
+
+   2 OPEN
+     Passive Vent to Atmosphere
+
+   3 MIRROR
+     Symmetry Plane
+
+   4 INTERPOLATED
+
+   5 PERIODIC
+
+   6 HVAC
+
+
+ Radiation Model Information
+
+   Number of control angles  104
+   Time step increment         3
+   Angle increment             5
+   Theta band N_phi   Solid angle
+     1:        4  0.12
+     2:       12  0.11
+     3:       16  0.13
+     4:       20  0.12
+     5:       20  0.12
+     6:       16  0.13
+     7:       12  0.11
+     8:        4  0.12
+   Using gray gas absorption.
+   Mean beam length -1.000 m
+ 
+ 
+
+ Run Time Diagnostics
+
+       Time Step       1   September 16, 2015  12:39:43
+       ----------------------------------------------
+       Mesh    1, Cycle       1
+       CPU/step:     2.627 s, Total CPU:      2.63 s
+       Time step:  0.57479 s, Total time:     0.57 s
+       Max CFL number:  0.90E+00 at (  1, 51, 50)
+       Max divergence:  0.29E-05 at (  2, 28, 50)
+       Min divergence: -0.10E-05 at ( 24, 77, 41)
+       Max VN  number:  0.31E-02 at ( 12, 47, 18)
+       Mesh    2, Cycle       1
+       CPU/step:     2.621 s, Total CPU:      2.62 s
+       Time step:  0.57479 s, Total time:     0.57 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle       1
+       CPU/step:     2.616 s, Total CPU:      2.62 s
+       Time step:  0.57479 s, Total time:     0.57 s
+       Max CFL number:  0.90E+00 at (  1, 54, 50)
+       Max divergence:  0.29E-05 at (  2, 67, 50)
+       Min divergence: -0.10E-05 at ( 47, 88, 30)
+       Max VN  number:  0.32E-02 at ( 22, 39, 49)
+       Mesh    4, Cycle       1
+       CPU/step:     2.607 s, Total CPU:      2.61 s
+       Time step:  0.57479 s, Total time:     0.57 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step       2   September 16, 2015  12:39:45
+       ----------------------------------------------
+       Mesh    1, Cycle       2
+       CPU/step:     0.575 s, Total CPU:      3.20 s
+       Time step:  0.57479 s, Total time:     1.15 s
+       Max CFL number:  0.90E+00 at (  1, 48, 50)
+       Max divergence:  0.21E-03 at (  1, 50, 50)
+       Min divergence: -0.93E-06 at ( 98, 72,  7)
+       Max VN  number:  0.59E-01 at (  2,100,  3)
+       Mesh    2, Cycle       2
+       CPU/step:     0.557 s, Total CPU:      3.18 s
+       Time step:  0.57479 s, Total time:     1.15 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle       2
+       CPU/step:     0.564 s, Total CPU:      3.18 s
+       Time step:  0.57479 s, Total time:     1.15 s
+       Max CFL number:  0.90E+00 at (  1, 46, 50)
+       Max divergence:  0.21E-03 at (  1, 55, 50)
+       Min divergence: -0.94E-06 at ( 79, 74, 12)
+       Max VN  number:  0.59E-01 at (  2,  1,  3)
+       Mesh    4, Cycle       2
+       CPU/step:     0.544 s, Total CPU:      3.15 s
+       Time step:  0.57479 s, Total time:     1.15 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step       3   September 16, 2015  12:39:48
+       ----------------------------------------------
+       Mesh    1, Cycle       3
+       CPU/step:     0.627 s, Total CPU:      3.83 s
+       Time step:  0.57479 s, Total time:     1.72 s
+       Max CFL number:  0.90E+00 at (  0, 52, 50)
+       Max divergence:  0.31E-03 at (  1, 52, 50)
+       Min divergence: -0.92E-06 at ( 98, 72,  7)
+       Max VN  number:  0.78E-01 at (  2,100,  3)
+       Mesh    2, Cycle       3
+       CPU/step:     0.596 s, Total CPU:      3.77 s
+       Time step:  0.57479 s, Total time:     1.72 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle       3
+       CPU/step:     0.626 s, Total CPU:      3.81 s
+       Time step:  0.57479 s, Total time:     1.72 s
+       Max CFL number:  0.90E+00 at (  0, 52, 50)
+       Max divergence:  0.31E-03 at (  1, 46, 50)
+       Min divergence: -0.92E-06 at ( 79, 74, 12)
+       Max VN  number:  0.78E-01 at (  2,  1,  3)
+       Mesh    4, Cycle       3
+       CPU/step:     0.603 s, Total CPU:      3.75 s
+       Time step:  0.57479 s, Total time:     1.72 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step       4   September 16, 2015  12:39:52
+       ----------------------------------------------
+       Mesh    1, Cycle       4
+       CPU/step:     0.963 s, Total CPU:      4.79 s
+       Time step:  0.57479 s, Total time:     2.30 s
+       Max CFL number:  0.90E+00 at (  0, 52, 50)
+       Max divergence:  0.32E-03 at (  1, 52, 50)
+       Min divergence: -0.92E-06 at ( 98, 72,  7)
+       Max VN  number:  0.67E-01 at (  2,100,  3)
+       Mesh    2, Cycle       4
+       CPU/step:     0.974 s, Total CPU:      4.75 s
+       Time step:  0.57479 s, Total time:     2.30 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle       4
+       CPU/step:     0.986 s, Total CPU:      4.79 s
+       Time step:  0.57479 s, Total time:     2.30 s
+       Max CFL number:  0.90E+00 at (  0, 46, 50)
+       Max divergence:  0.32E-03 at (  1, 46, 50)
+       Min divergence: -0.91E-06 at ( 97, 96,  5)
+       Max VN  number:  0.66E-01 at (  2,  1,  5)
+       Mesh    4, Cycle       4
+       CPU/step:     0.949 s, Total CPU:      4.70 s
+       Time step:  0.57479 s, Total time:     2.30 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step       5   September 16, 2015  12:39:54
+       ----------------------------------------------
+       Mesh    1, Cycle       5
+       CPU/step:     0.608 s, Total CPU:      5.40 s
+       Time step:  0.57479 s, Total time:     2.87 s
+       Max CFL number:  0.90E+00 at (  0, 52, 50)
+       Max divergence:  0.31E-03 at (  2, 52, 50)
+       Min divergence: -0.92E-06 at ( 98, 72,  7)
+       Max VN  number:  0.45E-01 at (  4,100,  8)
+       Mesh    2, Cycle       5
+       CPU/step:     0.591 s, Total CPU:      5.34 s
+       Time step:  0.57479 s, Total time:     2.87 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle       5
+       CPU/step:     0.617 s, Total CPU:      5.41 s
+       Time step:  0.57479 s, Total time:     2.87 s
+       Max CFL number:  0.90E+00 at (  0, 46, 50)
+       Max divergence:  0.31E-03 at (  2, 51, 50)
+       Min divergence: -0.91E-06 at ( 97, 96,  5)
+       Max VN  number:  0.45E-01 at (  5,  1,  3)
+       Mesh    4, Cycle       5
+       CPU/step:     0.574 s, Total CPU:      5.28 s
+       Time step:  0.57479 s, Total time:     2.87 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step       6   September 16, 2015  12:39:56
+       ----------------------------------------------
+       Mesh    1, Cycle       6
+       CPU/step:     0.604 s, Total CPU:      6.00 s
+       Time step:  0.57479 s, Total time:     3.45 s
+       Max CFL number:  0.90E+00 at (  0,100, 50)
+       Max divergence:  0.31E-03 at (  2, 52, 50)
+       Min divergence: -0.92E-06 at ( 98, 72,  7)
+       Max VN  number:  0.37E-01 at (  2, 49, 50)
+       Mesh    2, Cycle       6
+       CPU/step:     0.595 s, Total CPU:      5.93 s
+       Time step:  0.57479 s, Total time:     3.45 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle       6
+       CPU/step:     0.631 s, Total CPU:      6.04 s
+       Time step:  0.57479 s, Total time:     3.45 s
+       Max CFL number:  0.90E+00 at (  0,  1, 50)
+       Max divergence:  0.31E-03 at (  2, 44, 50)
+       Min divergence: -0.91E-06 at ( 97, 96,  5)
+       Max VN  number:  0.37E-01 at (  2, 38, 50)
+       Mesh    4, Cycle       6
+       CPU/step:     0.584 s, Total CPU:      5.86 s
+       Time step:  0.57479 s, Total time:     3.45 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step       7   September 16, 2015  12:40:00
+       ----------------------------------------------
+       Mesh    1, Cycle       7
+       CPU/step:     0.995 s, Total CPU:      7.00 s
+       Time step:  0.57479 s, Total time:     4.02 s
+       Max CFL number:  0.90E+00 at (  0,100, 50)
+       Max divergence:  0.34E-03 at (  2,100, 50)
+       Min divergence: -0.92E-06 at ( 98, 72,  7)
+       Max VN  number:  0.44E-01 at (  2, 37, 50)
+       Mesh    2, Cycle       7
+       CPU/step:     0.989 s, Total CPU:      6.92 s
+       Time step:  0.57479 s, Total time:     4.02 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle       7
+       CPU/step:     1.011 s, Total CPU:      7.05 s
+       Time step:  0.57479 s, Total time:     4.02 s
+       Max CFL number:  0.90E+00 at (  0,  1, 50)
+       Max divergence:  0.34E-03 at (  2,  1, 50)
+       Min divergence: -0.91E-06 at ( 97, 96,  5)
+       Max VN  number:  0.44E-01 at (  2, 38, 50)
+       Mesh    4, Cycle       7
+       CPU/step:     0.938 s, Total CPU:      6.80 s
+       Time step:  0.57479 s, Total time:     4.02 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step       8   September 16, 2015  12:40:03
+       ----------------------------------------------
+       Mesh    1, Cycle       8
+       CPU/step:     0.598 s, Total CPU:      7.60 s
+       Time step:  0.57479 s, Total time:     4.60 s
+       Max CFL number:  0.90E+00 at (  0,100, 50)
+       Max divergence:  0.37E-03 at (  2,100, 50)
+       Min divergence: -0.91E-06 at ( 98, 72,  7)
+       Max VN  number:  0.49E-01 at (  2, 61, 49)
+       Mesh    2, Cycle       8
+       CPU/step:     0.573 s, Total CPU:      7.49 s
+       Time step:  0.57479 s, Total time:     4.60 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle       8
+       CPU/step:     0.625 s, Total CPU:      7.68 s
+       Time step:  0.57479 s, Total time:     4.60 s
+       Max CFL number:  0.90E+00 at (  0,  1, 50)
+       Max divergence:  0.37E-03 at (  2,  1, 50)
+       Min divergence: -0.91E-06 at ( 97, 96,  5)
+       Max VN  number:  0.49E-01 at (  2, 59, 49)
+       Mesh    4, Cycle       8
+       CPU/step:     0.575 s, Total CPU:      7.37 s
+       Time step:  0.57479 s, Total time:     4.60 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step       9   September 16, 2015  12:40:05
+       ----------------------------------------------
+       Mesh    1, Cycle       9
+       CPU/step:     0.616 s, Total CPU:      8.21 s
+       Time step:  0.57479 s, Total time:     5.17 s
+       Max CFL number:  0.90E+00 at (  0,100, 50)
+       Max divergence:  0.38E-03 at (  2,100, 50)
+       Min divergence: -0.91E-06 at ( 98, 72,  7)
+       Max VN  number:  0.55E-01 at (  2,100, 49)
+       Mesh    2, Cycle       9
+       CPU/step:     0.609 s, Total CPU:      8.10 s
+       Time step:  0.57479 s, Total time:     5.17 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle       9
+       CPU/step:     0.606 s, Total CPU:      8.28 s
+       Time step:  0.57479 s, Total time:     5.17 s
+       Max CFL number:  0.90E+00 at (  0,  1, 50)
+       Max divergence:  0.38E-03 at (  2,  1, 50)
+       Min divergence: -0.91E-06 at ( 97, 96,  5)
+       Max VN  number:  0.55E-01 at (  2,  1, 49)
+       Mesh    4, Cycle       9
+       CPU/step:     0.597 s, Total CPU:      7.97 s
+       Time step:  0.57479 s, Total time:     5.17 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step      10   September 16, 2015  12:40:09
+       ----------------------------------------------
+       Mesh    1, Cycle      10
+       CPU/step:     0.949 s, Total CPU:      9.16 s
+       Time step:  0.57479 s, Total time:     5.75 s
+       Max CFL number:  0.90E+00 at (  2,100, 50)
+       Max divergence:  0.38E-03 at (  2,100, 50)
+       Min divergence: -0.91E-06 at ( 98, 72,  7)
+       Max VN  number:  0.59E-01 at (  2,100, 49)
+       Mesh    2, Cycle      10
+       CPU/step:     0.956 s, Total CPU:      9.06 s
+       Time step:  0.57479 s, Total time:     5.75 s
+       Max CFL number:  0.90E+00 at ( 92, 55, 24)
+       Max divergence:  0.98E-06 at ( 92, 36, 45)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.31E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle      10
+       CPU/step:     0.939 s, Total CPU:      9.22 s
+       Time step:  0.57479 s, Total time:     5.75 s
+       Max CFL number:  0.90E+00 at (  2,  0, 49)
+       Max divergence:  0.38E-03 at (  2,  1, 50)
+       Min divergence: -0.91E-06 at ( 97, 96,  5)
+       Max VN  number:  0.60E-01 at (  2,  1, 49)
+       Mesh    4, Cycle      10
+       CPU/step:     0.927 s, Total CPU:      8.90 s
+       Time step:  0.57479 s, Total time:     5.75 s
+       Max CFL number:  0.90E+00 at ( 17, 34, 41)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.31E-02 at ( 64, 50, 30)
+ 
+       Time Step      20   September 16, 2015  12:40:35
+       ----------------------------------------------
+       Mesh    1, Cycle      20
+       CPU/step:     0.695 s, Total CPU:     16.11 s
+       Time step:  0.57479 s, Total time:    11.50 s
+       Max CFL number:  0.90E+00 at (  4, 75, 50)
+       Max divergence:  0.24E-03 at (  4, 79, 50)
+       Min divergence: -0.40E-04 at (  1,100, 39)
+       Max VN  number:  0.54E-01 at (  2,  2, 49)
+       Mesh    2, Cycle      20
+       CPU/step:     0.684 s, Total CPU:     15.90 s
+       Time step:  0.57479 s, Total time:    11.50 s
+       Max CFL number:  0.90E+00 at ( 56, 67, 16)
+       Max divergence:  0.99E-06 at ( 12, 85, 48)
+       Min divergence: -0.10E-05 at ( 69,  4, 36)
+       Max VN  number:  0.30E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle      20
+       CPU/step:     0.688 s, Total CPU:     16.10 s
+       Time step:  0.57479 s, Total time:    11.50 s
+       Max CFL number:  0.90E+00 at (  4, 34, 50)
+       Max divergence:  0.24E-03 at (  4, 25, 50)
+       Min divergence: -0.40E-04 at (  1,  1, 39)
+       Max VN  number:  0.54E-01 at (  2, 99, 49)
+       Mesh    4, Cycle      20
+       CPU/step:     0.675 s, Total CPU:     15.64 s
+       Time step:  0.57479 s, Total time:    11.50 s
+       Max CFL number:  0.90E+00 at (  9, 24, 14)
+       Max divergence:  0.98E-06 at ( 66, 61, 14)
+       Min divergence: -0.10E-05 at ( 97, 97, 49)
+       Max VN  number:  0.30E-02 at ( 64, 50, 30)
+ 
+       Time Step      30   September 16, 2015  12:41:04
+       ----------------------------------------------
+       Mesh    1, Cycle      30
+       CPU/step:     0.739 s, Total CPU:     23.50 s
+       Time step:  0.57479 s, Total time:    17.24 s
+       Max CFL number:  0.90E+00 at (  5, 58, 50)
+       Max divergence:  0.22E-03 at (  5, 58, 50)
+       Min divergence: -0.18E-04 at (  1,100, 44)
+       Max VN  number:  0.60E-01 at (  3,  2, 49)
+       Mesh    2, Cycle      30
+       CPU/step:     0.726 s, Total CPU:     23.16 s
+       Time step:  0.57479 s, Total time:    17.24 s
+       Max CFL number:  0.90E+00 at ( 56, 67, 16)
+       Max divergence:  0.98E-06 at ( 12, 85, 48)
+       Min divergence: -0.99E-06 at ( 69,  4, 36)
+       Max VN  number:  0.30E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle      30
+       CPU/step:     0.731 s, Total CPU:     23.41 s
+       Time step:  0.57479 s, Total time:    17.24 s
+       Max CFL number:  0.90E+00 at (  5, 42, 50)
+       Max divergence:  0.22E-03 at (  5, 42, 50)
+       Min divergence: -0.18E-04 at (  1,  1, 44)
+       Max VN  number:  0.60E-01 at (  3, 99, 49)
+       Mesh    4, Cycle      30
+       CPU/step:     0.718 s, Total CPU:     22.83 s
+       Time step:  0.57479 s, Total time:    17.24 s
+       Max CFL number:  0.90E+00 at (  9, 24, 14)
+       Max divergence:  0.97E-06 at ( 66, 61, 14)
+       Min divergence: -0.99E-06 at ( 97, 97, 49)
+       Max VN  number:  0.30E-02 at ( 64, 50, 30)
+ 
+       Time Step      40   September 16, 2015  12:41:33
+       ----------------------------------------------
+       Mesh    1, Cycle      40
+       CPU/step:     0.751 s, Total CPU:     31.01 s
+       Time step:  0.57479 s, Total time:    22.99 s
+       Max CFL number:  0.90E+00 at (  6,100, 50)
+       Max divergence:  0.22E-03 at (  6,100, 50)
+       Min divergence: -0.11E-04 at (  2,  2, 44)
+       Max VN  number:  0.71E-01 at (  4,  2, 47)
+       Mesh    2, Cycle      40
+       CPU/step:     0.743 s, Total CPU:     30.60 s
+       Time step:  0.57479 s, Total time:    22.99 s
+       Max CFL number:  0.90E+00 at ( 56, 67, 16)
+       Max divergence:  0.96E-06 at ( 92, 36, 45)
+       Min divergence: -0.96E-06 at ( 69,  4, 36)
+       Max VN  number:  0.30E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle      40
+       CPU/step:     0.752 s, Total CPU:     30.93 s
+       Time step:  0.57479 s, Total time:    22.99 s
+       Max CFL number:  0.90E+00 at (  6,  0, 50)
+       Max divergence:  0.22E-03 at (  6,  1, 50)
+       Min divergence: -0.11E-04 at (  2, 99, 45)
+       Max VN  number:  0.71E-01 at (  4, 99, 47)
+       Mesh    4, Cycle      40
+       CPU/step:     0.736 s, Total CPU:     30.19 s
+       Time step:  0.57479 s, Total time:    22.99 s
+       Max CFL number:  0.90E+00 at (  9, 24, 14)
+       Max divergence:  0.95E-06 at ( 66, 61, 14)
+       Min divergence: -0.97E-06 at ( 97, 97, 49)
+       Max VN  number:  0.30E-02 at ( 64, 50, 30)
+ 
+       Time Step      50   September 16, 2015  12:42:01
+       ----------------------------------------------
+       Mesh    1, Cycle      50
+       CPU/step:     0.705 s, Total CPU:     38.06 s
+       Time step:  0.57479 s, Total time:    28.74 s
+       Max CFL number:  0.90E+00 at (  7, 57, 50)
+       Max divergence:  0.19E-03 at (  7, 57, 50)
+       Min divergence: -0.15E-04 at (  2, 99, 45)
+       Max VN  number:  0.70E-01 at (  5,  2, 47)
+       Mesh    2, Cycle      50
+       CPU/step:     0.704 s, Total CPU:     37.64 s
+       Time step:  0.57479 s, Total time:    28.74 s
+       Max CFL number:  0.90E+00 at ( 56, 67, 16)
+       Max divergence:  0.10E-05 at (  2, 74, 33)
+       Min divergence: -0.94E-06 at ( 69,  4, 36)
+       Max VN  number:  0.29E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle      50
+       CPU/step:     0.709 s, Total CPU:     38.01 s
+       Time step:  0.57479 s, Total time:    28.74 s
+       Max CFL number:  0.90E+00 at (  7, 41, 50)
+       Max divergence:  0.19E-03 at (  7, 42, 50)
+       Min divergence: -0.15E-04 at (  2,  1, 45)
+       Max VN  number:  0.70E-01 at (  5, 99, 47)
+       Mesh    4, Cycle      50
+       CPU/step:     0.698 s, Total CPU:     37.17 s
+       Time step:  0.57479 s, Total time:    28.74 s
+       Max CFL number:  0.90E+00 at (  9, 24, 14)
+       Max divergence:  0.94E-06 at (  3, 40, 43)
+       Min divergence: -0.94E-06 at ( 97, 97, 49)
+       Max VN  number:  0.29E-02 at ( 64, 50, 30)
+ 
+       Time Step      53   September 16, 2015  12:42:09
+       ----------------------------------------------
+       Mesh    1, Cycle      53
+       CPU/step:     0.726 s, Total CPU:     40.24 s
+       Time step:  0.57479 s, Total time:    30.46 s
+       Max CFL number:  0.90E+00 at (  7, 57, 50)
+       Max divergence:  0.19E-03 at (  7, 57, 50)
+       Min divergence: -0.15E-04 at (  2, 99, 45)
+       Max VN  number:  0.68E-01 at (  5,  2, 47)
+       Mesh    2, Cycle      53
+       CPU/step:     0.720 s, Total CPU:     39.80 s
+       Time step:  0.57479 s, Total time:    30.46 s
+       Max CFL number:  0.90E+00 at ( 56, 67, 16)
+       Max divergence:  0.10E-05 at (  2, 74, 33)
+       Min divergence: -0.94E-06 at ( 69,  4, 36)
+       Max VN  number:  0.29E-02 at ( 16, 81, 23)
+       Mesh    3, Cycle      53
+       CPU/step:     0.712 s, Total CPU:     40.15 s
+       Time step:  0.57479 s, Total time:    30.46 s
+       Max CFL number:  0.90E+00 at (  7, 41, 50)
+       Max divergence:  0.19E-03 at (  7, 42, 50)
+       Min divergence: -0.15E-04 at (  2,  1, 45)
+       Max VN  number:  0.67E-01 at (  5, 99, 47)
+       Mesh    4, Cycle      53
+       CPU/step:     0.708 s, Total CPU:     39.29 s
+       Time step:  0.57479 s, Total time:    30.46 s
+       Max CFL number:  0.90E+00 at (  4, 25, 45)
+       Max divergence:  0.94E-06 at (  3, 40, 43)
+       Min divergence: -0.94E-06 at ( 97, 97, 49)
+       Max VN  number:  0.29E-02 at ( 64, 50, 30)
+ 
+
+
+ CPU Time Usage, Mesh   1
+
+                 CPU (s)        %  
+       ----------------------------
+       MAIN       157.18     100.00
+       DIVG         3.69       2.35
+       MASS         5.50       3.50
+       VELO        15.98      10.17
+       PRES         3.46       2.20
+       WALL         1.12       0.71
+       DUMP         0.35       0.22
+       PART         0.00       0.00
+       RADI         8.93       5.68
+       FIRE         0.00       0.00
+       COMM         1.20       0.76
+       SubTot      40.24      25.60
+
+
+ CPU Time Usage, Mesh   2
+
+                 CPU (s)        %  
+       ----------------------------
+       MAIN       157.18     100.00
+       DIVG         3.67       2.34
+       MASS         5.35       3.41
+       VELO        15.72      10.00
+       PRES         3.46       2.20
+       WALL         1.04       0.66
+       DUMP         0.36       0.23
+       PART         0.00       0.00
+       RADI         8.99       5.72
+       FIRE         0.00       0.00
+       COMM         1.20       0.76
+       SubTot      39.80      25.32
+
+
+ CPU Time Usage, Mesh   3
+
+                 CPU (s)        %  
+       ----------------------------
+       MAIN       157.18     100.00
+       DIVG         3.68       2.34
+       MASS         5.52       3.51
+       VELO        15.74      10.02
+       PRES         3.49       2.22
+       WALL         1.13       0.72
+       DUMP         0.37       0.23
+       PART         0.00       0.00
+       RADI         9.03       5.75
+       FIRE         0.00       0.00
+       COMM         1.20       0.76
+       SubTot      40.15      25.54
+
+
+ CPU Time Usage, Mesh   4
+
+                 CPU (s)        %  
+       ----------------------------
+       MAIN       157.18     100.00
+       DIVG         3.69       2.34
+       MASS         5.34       3.40
+       VELO        15.37       9.78
+       PRES         3.46       2.20
+       WALL         1.04       0.66
+       DUMP         0.36       0.23
+       PART         0.00       0.00
+       RADI         8.84       5.62
+       FIRE         0.00       0.00
+       COMM         1.20       0.76
+       SubTot      39.29      25.00
+
+
+ Time Stepping Wall Clock Time (s):      156.173
+ Total Elapsed Wall Clock Time (s):      157.508
+
+STOP: FDS completed successfully
