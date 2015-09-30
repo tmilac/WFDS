@@ -1,0 +1,9 @@
+
+*.[oa]
+*~
+*.mod
+
+# WFDS executables
+
+fds_mpi_intel_osx_64
+fds_intel_osx_64
