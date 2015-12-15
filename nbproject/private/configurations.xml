@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="95">
+<configurationDescriptor version="97">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
     <df root="." name="0">
       <df name="ExampleFiles">
@@ -122,52 +122,6 @@
       </nativedebugger>
       <runprofile version="9">
         <runcommandpicklist>
-          <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
-        </runcommandpicklist>
-        <runcommand>"${OUTPUT_PATH}"</runcommand>
-        <rundir>.</rundir>
-        <buildfirst>true</buildfirst>
-        <terminal-type>0</terminal-type>
-        <remove-instrumentation>0</remove-instrumentation>
-        <environment>
-        </environment>
-      </runprofile>
-    </conf>
-    <conf name="Example1" type="0">
-      <toolsSet>
-        <developmentServer>localhost</developmentServer>
-        <platform>4</platform>
-      </toolsSet>
-      <compile>
-        <compiledirpicklist>
-          <compiledirpicklistitem>.</compiledirpicklistitem>
-          <compiledirpicklistitem>${AUTO_FOLDER}</compiledirpicklistitem>
-        </compiledirpicklist>
-        <compiledir>${AUTO_FOLDER}</compiledir>
-        <compilecommandpicklist>
-          <compilecommandpicklistitem>${MAKE} ${ITEM_NAME}.o</compilecommandpicklistitem>
-          <compilecommandpicklistitem>${AUTO_COMPILE}</compilecommandpicklistitem>
-        </compilecommandpicklist>
-        <compilecommand>${AUTO_COMPILE}</compilecommand>
-      </compile>
-      <dbx_gdbdebugger version="1">
-        <gdb_pathmaps>
-        </gdb_pathmaps>
-        <gdb_interceptlist>
-          <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
-        </gdb_interceptlist>
-        <gdb_options>
-          <DebugOptions>
-          </DebugOptions>
-        </gdb_options>
-        <gdb_buildfirst gdb_buildfirst_overriden="false" gdb_buildfirst_old="false"/>
-      </dbx_gdbdebugger>
-      <nativedebugger version="1">
-        <engine>gdb</engine>
-      </nativedebugger>
-      <runprofile version="9">
-        <runcommandpicklist>
-          <runcommandpicklistitem>../Example Files/fds_intel_osx_64 ./</runcommandpicklistitem>
           <runcommandpicklistitem>"../Example Files/fds_intel_osx_64 ./input_C064_LS.txt"</runcommandpicklistitem>
           <runcommandpicklistitem>"../Example Files/fds_intel_osx_64" ./input_C064_LS.txt</runcommandpicklistitem>
           <runcommandpicklistitem>../Example Files/fds_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
@@ -177,8 +131,9 @@
           <runcommandpicklistitem>../Source\ Files/fds_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
           <runcommandpicklistitem>"../Source Files/fds_intel_osx_64" ./input_C064_LS.txt</runcommandpicklistitem>
           <runcommandpicklistitem>../SourceFiles/fds_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
+          <runcommandpicklistitem>../SourceFiles/fds_intel_osx_64 ./input_C064_LS.fds</runcommandpicklistitem>
         </runcommandpicklist>
-        <runcommand>../SourceFiles/fds_intel_osx_64 ./input_C064_LS.txt</runcommand>
+        <runcommand>../SourceFiles/fds_intel_osx_64 ./input_C064_LS.fds</runcommand>
         <rundir>./ExampleFiles</rundir>
         <buildfirst>false</buildfirst>
         <terminal-type>0</terminal-type>
@@ -187,61 +142,7 @@
         </environment>
       </runprofile>
     </conf>
-    <conf name="MPI_Example1" type="0">
-      <toolsSet>
-        <developmentServer>localhost</developmentServer>
-        <platform>4</platform>
-      </toolsSet>
-      <compile>
-        <compiledirpicklist>
-          <compiledirpicklistitem>.</compiledirpicklistitem>
-          <compiledirpicklistitem>${AUTO_FOLDER}</compiledirpicklistitem>
-        </compiledirpicklist>
-        <compiledir>${AUTO_FOLDER}</compiledir>
-        <compilecommandpicklist>
-          <compilecommandpicklistitem>${MAKE} ${ITEM_NAME}.o</compilecommandpicklistitem>
-          <compilecommandpicklistitem>${AUTO_COMPILE}</compilecommandpicklistitem>
-        </compilecommandpicklist>
-        <compilecommand>${AUTO_COMPILE}</compilecommand>
-      </compile>
-      <dbx_gdbdebugger version="1">
-        <gdb_pathmaps>
-        </gdb_pathmaps>
-        <gdb_interceptlist>
-          <gdbinterceptoptions gdb_all="false" gdb_unhandled="true" gdb_unexpected="true"/>
-        </gdb_interceptlist>
-        <gdb_options>
-          <DebugOptions>
-          </DebugOptions>
-        </gdb_options>
-        <gdb_buildfirst gdb_buildfirst_overriden="false" gdb_buildfirst_old="false"/>
-      </dbx_gdbdebugger>
-      <nativedebugger version="1">
-        <engine>gdb</engine>
-      </nativedebugger>
-      <runprofile version="9">
-        <runcommandpicklist>
-          <runcommandpicklistitem>"../Example Files/fds_intel_osx_64 ./input_C064_LS.txt"</runcommandpicklistitem>
-          <runcommandpicklistitem>"../Example Files/fds_intel_osx_64" ./input_C064_LS.txt</runcommandpicklistitem>
-          <runcommandpicklistitem>../Example Files/fds_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
-          <runcommandpicklistitem>../Example_Files/fds_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
-          <runcommandpicklistitem>../Source_Files/fds_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
-          <runcommandpicklistitem>../Source Files/fds_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
-          <runcommandpicklistitem>../Source\ Files/fds_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
-          <runcommandpicklistitem>"../Source Files/fds_intel_osx_64" ./input_C064_LS.txt</runcommandpicklistitem>
-          <runcommandpicklistitem>../SourceFiles/fds_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
-          <runcommandpicklistitem>../SourceFiles/fds_mpi_intel_osx_64 ./input_C064_LS.txt</runcommandpicklistitem>
-        </runcommandpicklist>
-        <runcommand>../SourceFiles/fds_mpi_intel_osx_64 ./input_C064_LS.txt</runcommand>
-        <rundir>./ExampleFiles</rundir>
-        <buildfirst>false</buildfirst>
-        <terminal-type>0</terminal-type>
-        <remove-instrumentation>0</remove-instrumentation>
-        <environment>
-        </environment>
-      </runprofile>
-    </conf>
-    <conf name="MPI_Example2" type="0">
+    <conf name="MPI" type="0">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
         <platform>4</platform>
@@ -278,8 +179,13 @@
           <runcommandpicklistitem>"${OUTPUT_PATH}"</runcommandpicklistitem>
           <runcommandpicklistitem>input_windflat_4mesh.fds</runcommandpicklistitem>
           <runcommandpicklistitem>../SourceFiles/fds_mpi_intel_osx_64 input_windflat_4mesh.fds</runcommandpicklistitem>
+          <runcommandpicklistitem>/shared/openmpi_64/bin/mpirun -n 4
+../SourceFiles/fds_mpi_intel_osx_64 input_windflat_4mesh.fds</runcommandpicklistitem>
+          <runcommandpicklistitem>/shared/openmpi_64/bin/mpirun -n 4
+../SourceFiles/fds_mpi_intel_osx_64 ./input_windflat_4mesh.fds</runcommandpicklistitem>
+          <runcommandpicklistitem>/shared/openmpi_64/bin/mpirun -n 4 ../SourceFiles/fds_mpi_intel_osx_64 ./input_windflat_4mesh.fds</runcommandpicklistitem>
         </runcommandpicklist>
-        <runcommand>../SourceFiles/fds_mpi_intel_osx_64 input_windflat_4mesh.fds</runcommand>
+        <runcommand>/shared/openmpi_64/bin/mpirun -n 4 ../SourceFiles/fds_mpi_intel_osx_64 ./input_windflat_4mesh.fds</runcommand>
         <rundir>./ExampleFiles</rundir>
         <buildfirst>false</buildfirst>
         <terminal-type>0</terminal-type>

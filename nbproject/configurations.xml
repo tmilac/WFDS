@@ -1,86 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configurationDescriptor version="95">
+<configurationDescriptor version="97">
   <logicalFolder name="root" displayName="root" projectFiles="true" kind="ROOT">
+    <logicalFolder name="T"
+                   displayName="T"
+                   projectFiles="true"
+                   root="/var/folders/nd/966w_rvs653cdbxrywgscmsm0000gn/T">
+      <itemPath>/var/folders/nd/966w_rvs653cdbxrywgscmsm0000gn/T/ifortdummyHUZDLy.c</itemPath>
+    </logicalFolder>
     <df root="." name="0">
       <df name="SourceFiles">
-        <in>comp_functions.mod</in>
-        <in>complex_geometry.mod</in>
-        <in>compressdefs.mod</in>
         <in>cons.f90</in>
-        <in>control_functions.mod</in>
-        <in>control_variables.mod</in>
         <in>ctrl.f90</in>
         <in>data.f90</in>
-        <in>dcdflib.mod</in>
         <in>devc.f90</in>
-        <in>device_variables.mod</in>
         <in>divg.f90</in>
-        <in>divg.mod</in>
         <in>dump.f90</in>
-        <in>dump.mod</in>
         <in>evac.f90</in>
-        <in>evac.mod</in>
         <in>fire.f90</in>
-        <in>fire.mod</in>
         <in>func.f90</in>
         <in>geom.f90</in>
-        <in>geometry_functions.mod</in>
-        <in>global_constants.mod</in>
         <in>hvac.f90</in>
-        <in>hvac_routines.mod</in>
         <in>ieva.f90</in>
         <in>init.f90</in>
-        <in>init.mod</in>
         <in>irad.f90</in>
         <in>isob.c</in>
-        <in>isodefs.mod</in>
         <in>main.f90</in>
         <in>mass.f90</in>
-        <in>mass.mod</in>
-        <in>math_functions.mod</in>
-        <in>memory_functions.mod</in>
         <in>mesh.f90</in>
-        <in>mesh_pointers.mod</in>
-        <in>mesh_variables.mod</in>
-        <in>miev.mod</in>
-        <in>misc_functions.mod</in>
-        <in>mpi.mod</in>
         <in>mpip.f90</in>
-        <in>mpis.f90</in>
-        <in>openmp.mod</in>
-        <in>output_data.mod</in>
         <in>part.f90</in>
-        <in>part.mod</in>
-        <in>physical_functions.mod</in>
         <in>pois.f90</in>
-        <in>pois.mod</in>
         <in>prec.f90</in>
-        <in>precision_parameters.mod</in>
         <in>pres.f90</in>
-        <in>pres.mod</in>
-        <in>property_data.mod</in>
-        <in>rad.mod</in>
-        <in>radcalv.mod</in>
-        <in>radcons.mod</in>
         <in>radi.f90</in>
         <in>read.f90</in>
-        <in>read_input.mod</in>
         <in>scrc.f90</in>
-        <in>scrc.mod</in>
         <in>smvv.f90</in>
-        <in>specdata.mod</in>
-        <in>stat.mod</in>
-        <in>tran.mod</in>
         <in>turb.f90</in>
-        <in>turbulence.mod</in>
         <in>type.f90</in>
-        <in>types.mod</in>
         <in>vege.f90</in>
-        <in>vege.mod</in>
         <in>velo.f90</in>
-        <in>velo.mod</in>
         <in>wall.f90</in>
-        <in>wall_routines.mod</in>
       </df>
     </df>
     <logicalFolder name="ExternalFiles"
@@ -102,289 +62,52 @@
         <dependencyChecking>false</dependencyChecking>
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
+      <flagsDictionary>
+        <element flagsID="0" commonFlags="-O2 -m64"/>
+        <element flagsID="1" commonFlags="-m64"/>
+      </flagsDictionary>
       <codeAssistance>
       </codeAssistance>
       <makefileType>
         <makeTool>
-          <buildCommandWorkingDir>./Source Files</buildCommandWorkingDir>
-          <buildCommand>${MAKE} -f makefile intel_osx_64</buildCommand>
+          <buildCommandWorkingDir>./SourceFiles</buildCommandWorkingDir>
+          <buildCommand>${MAKE}  -f makefile intel_osx_64 FCOMPL=ifort</buildCommand>
           <cleanCommand>${MAKE} -f makefile clean</cleanCommand>
           <executablePath></executablePath>
         </makeTool>
+        <preBuild>
+          <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
+          <preBuildCommand></preBuildCommand>
+        </preBuild>
       </makefileType>
-      <item path="SourceFiles/comp_functions.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/complex_geometry.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/compressdefs.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/cons.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/control_functions.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/control_variables.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/ctrl.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/data.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/dcdflib.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/devc.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/device_variables.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/divg.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/divg.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/dump.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/dump.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/evac.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/evac.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/fire.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/fire.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/func.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/geom.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/geometry_functions.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/global_constants.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/hvac.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/hvac_routines.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/ieva.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/init.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/init.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/irad.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/isob.c" ex="false" tool="0" flavor2="0">
-      </item>
-      <item path="SourceFiles/isodefs.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/main.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mass.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mass.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/math_functions.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/memory_functions.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mesh.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mesh_pointers.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mesh_variables.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/miev.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/misc_functions.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mpi.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mpip.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mpis.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/openmp.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/output_data.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/part.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/part.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/physical_functions.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/pois.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/pois.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/prec.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/precision_parameters.mod"
+      <item path="/var/folders/nd/966w_rvs653cdbxrywgscmsm0000gn/T/ifortdummyHUZDLy.c"
             ex="false"
-            tool="2"
+            tool="0"
             flavor2="0">
+        <cTool flags="1">
+        </cTool>
       </item>
-      <item path="SourceFiles/pres.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/pres.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/property_data.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/rad.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/radcalv.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/radcons.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/radi.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/read.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/read_input.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/scrc.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/scrc.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/smvv.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/specdata.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/stat.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/tran.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/turb.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/turbulence.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/type.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/types.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/vege.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/vege.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/velo.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/velo.mod" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/wall.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/wall_routines.mod" ex="false" tool="2" flavor2="0">
-      </item>
-    </conf>
-    <conf name="Example1" type="0">
-      <toolsSet>
-        <compilerSet>default</compilerSet>
-        <dependencyChecking>false</dependencyChecking>
-        <rebuildPropChanged>false</rebuildPropChanged>
-      </toolsSet>
-      <codeAssistance>
-      </codeAssistance>
-      <makefileType>
-        <makeTool>
-          <buildCommandWorkingDir>./SourceFiles</buildCommandWorkingDir>
-          <buildCommand>${MAKE}  -f makefile intel_osx_64 FCOMPL=/opt/intel/composerxe/bin/ifort</buildCommand>
-          <cleanCommand>${MAKE} -f makefile clean</cleanCommand>
-          <executablePath></executablePath>
-          <cTool>
-            <preprocessorList>
-              <Elem>pp_OSX</Elem>
-              <Elem>pp_noappend</Elem>
-            </preprocessorList>
-          </cTool>
-        </makeTool>
-      </makefileType>
       <item path="SourceFiles/isob.c" ex="false" tool="0" flavor2="0">
+        <cTool flags="0">
+        </cTool>
       </item>
+      <folder path="0">
+        <cTool>
+          <preprocessorList>
+            <Elem>pp_OSX</Elem>
+            <Elem>pp_noappend</Elem>
+          </preprocessorList>
+        </cTool>
+      </folder>
+      <folder path="T">
+        <cTool>
+          <incDir>
+            <pElem>SourceFiles</pElem>
+          </incDir>
+        </cTool>
+      </folder>
     </conf>
-    <conf name="MPI_Example1" type="0">
-      <toolsSet>
-        <compilerSet>default</compilerSet>
-        <dependencyChecking>false</dependencyChecking>
-        <rebuildPropChanged>false</rebuildPropChanged>
-      </toolsSet>
-      <codeAssistance>
-      </codeAssistance>
-      <makefileType>
-        <makeTool>
-          <buildCommandWorkingDir>./SourceFiles</buildCommandWorkingDir>
-          <buildCommand>${MAKE}  -f makefile mpi_intel_osx_64 FCOMPL=/shared/openmpi_64/bin/mpifort</buildCommand>
-          <cleanCommand>${MAKE} -f makefile clean</cleanCommand>
-          <executablePath></executablePath>
-          <cTool>
-            <preprocessorList>
-              <Elem>pp_OSX</Elem>
-              <Elem>pp_noappend</Elem>
-            </preprocessorList>
-          </cTool>
-        </makeTool>
-      </makefileType>
-      <item path="SourceFiles/cons.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/ctrl.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/data.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/devc.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/divg.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/dump.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/evac.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/fire.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/func.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/geom.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/hvac.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/ieva.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/init.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/irad.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/isob.c" ex="false" tool="0" flavor2="2">
-      </item>
-      <item path="SourceFiles/main.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mass.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mesh.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/mpip.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/part.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/pois.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/prec.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/pres.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/radi.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/read.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/scrc.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/smvv.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/turb.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/type.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/vege.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/velo.f90" ex="false" tool="2" flavor2="0">
-      </item>
-      <item path="SourceFiles/wall.f90" ex="false" tool="2" flavor2="0">
-      </item>
-    </conf>
-    <conf name="MPI_Example2" type="0">
+    <conf name="MPI" type="0">
       <toolsSet>
         <compilerSet>default</compilerSet>
         <dependencyChecking>false</dependencyChecking>
@@ -408,6 +131,10 @@
             </preprocessorList>
           </cTool>
         </makeTool>
+        <preBuild>
+          <preBuildCommandWorkingDir>.</preBuildCommandWorkingDir>
+          <preBuildCommand></preBuildCommand>
+        </preBuild>
       </makefileType>
       <item path="SourceFiles/cons.f90" ex="false" tool="2" flavor2="0">
       </item>

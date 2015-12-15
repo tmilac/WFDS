@@ -18,15 +18,7 @@
                     <type>0</type>
                 </confElem>
                 <confElem>
-                    <name>Example1</name>
-                    <type>0</type>
-                </confElem>
-                <confElem>
-                    <name>MPI_Example1</name>
-                    <type>0</type>
-                </confElem>
-                <confElem>
-                    <name>MPI_Example2</name>
+                    <name>MPI</name>
                     <type>0</type>
                 </confElem>
             </confList>
