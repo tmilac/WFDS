@@ -1,7 +1,7 @@
 &HEAD CHID='AU_C064_LS' /
 TITLE='Level set simulation of AU experiment C064' /
 
-&MISC VEG_LEVEL_SET=.TRUE.,U0=5 / 
+&MISC VEG_LEVEL_SET_UNCOUPLED=.TRUE.,U0=5 / 
 &TIME T_END=110 / 
 
 - 120 m by 120 m; dx=dy=1m
