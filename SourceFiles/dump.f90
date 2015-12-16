@@ -81,7 +81,7 @@ IMPLICIT NONE
 REAL(EB) :: TNOW, TTMP
 REAL(EB), INTENT(IN) :: T
 INTEGER, INTENT(IN) :: NM
-CHARACTER(30) :: FN_UVW
+CHARACTER(80) :: FN_UVW
 LOGICAL :: L_READ_EFF
 INTEGER :: NFIELDS, I1, I2, I2_NOW, K, N_END
 
@@ -217,9 +217,20 @@ ELSE
       IF (T>=UVW_CLOCK_CBC(IUVW)) THEN
          WRITE(FN_UVW,'(A,A,I3.3,A)') TRIM(CHID),'_uvw_',IUVW,'.csv'
          CALL DUMP_UVW(NM,FN_UVW)
-         IUVW = IUVW + 1
+!        IUVW = IUVW + 1
+         MESHES(NM)%IUVW = MESHES(NM)%IUVW + 1
       ENDIF
    ENDIF PT2_IF
+   IF (T>=UVW_TIMER(MESHES(NM)%IUVW)) THEN
+      IF (NMESHES>1) THEN
+         WRITE(FN_UVW,'(A,A,I3.3,A,I3.3,A)') TRIM(CHID),'_uvw_t',MESHES(NM)%IUVW,'_m',NM,'.csv'
+      ELSE
+         WRITE(FN_UVW,'(A,A,I3.3,A)') TRIM(CHID),'_uvw_',MESHES(NM)%IUVW,'.csv'
+      ENDIF
+      CALL DUMP_UVW(NM,FN_UVW)
+      MESHES(NM)%IUVW = MESHES(NM)%IUVW + 1
+   ENDIF
+
 ENDIF EVACUATION_DUMP
 
 TUSED(7,NM) = TUSED(7,NM) + SECOND() - TNOW
@@ -334,7 +345,6 @@ DO N=1,N_PROF
 ENDDO
 
 ! Vegetation File(s) for Fuel Element model
-
 IF (N_TREES_OUT > 0) THEN
   N_TREE = 0
   ALLOCATE(LU_VEG_OUT(N_TREES_OUT))
@@ -639,9 +649,12 @@ DO N=1,N_TREES_OUT
     OPEN(LU_VEG_OUT(N),FILE=FN_VEG_OUT(N),FORM='FORMATTED',STATUS='OLD',POSITION='APPEND')
  ELSE
     OPEN(LU_VEG_OUT(N),FILE=FN_VEG_OUT(N),FORM='FORMATTED',STATUS='REPLACE')
-    WRITE(LU_VEG_OUT(N),'(A,A,A,A,A,A)')'s, ','C, ','kg, ','kg, ','kW, ','kW' 
-    WRITE(LU_VEG_OUT(N),'(A,A,A,A,A,A)')'Time, ','Temp, ','Total_Tree_Dry_Mass, ','Total_Tree_Moist_Mass, ', &
-                                         'total_int_div(qveg_conv)dVe, ','total_int_div(qveg_rad)dVe'
+    WRITE(LU_VEG_OUT(N),'(A,A,A,A,A,A,A,A,A,A,A)')'s, ','C, ','C, ','kg, ','kg, ','kg, ','kg ','kW, ','kW','kg','kW' 
+    WRITE(LU_VEG_OUT(N),'(A,A,A,A,A,A,A,A,A,A,A)')'Time, ','TreeAvgTempVeg, ','TreeAvgTempGas, ', &
+                                             'Total_Tree_Dry_Mass, ', 'Total_Tree_Moist_Mass, ', &
+                                             'Total_Tree_Char_Mass, ','Total_Tree_Ash_Mass, ', &
+                                             'TreeAvg_int_div(qveg_conv)dVe, ','TreeAvg_int_div(qveg_rad)dVe, ', &
+                                             'Total Char Loss, ','Total CharOx HRR'
  ENDIF
 ENDDO
  
@@ -1139,6 +1152,7 @@ CHARACTER(30) :: VEG_DEVICE
 TYPE (GEOMETRY_TYPE), POINTER :: G=>NULL()
 REAL(EB) :: THETA,UU(3)=0._EB,EYE(3,3)=0._EB,PP(3,3)=0._EB,QQ(3,3)=0._EB,RR(3,3)=0._EB,VOR(3),VOR_DEFAULT(3)
 INTEGER :: TYPE_INDICATOR
+INTEGER :: NCFCR
 
 ! If this is an MPI job and this is not the master node, open the .smv file only if this is not a RESTART case
 
@@ -1557,7 +1571,7 @@ WRITE(LU_SMV,'(/A)') 'OUTLINE'
 WRITE(LU_SMV,'(I4)') N
 DO I=1,N
    SEG=>SEGMENT(I)
-   WRITE(LU_SMV,'(6F12.4)') SEG%X1,SEG%Y1,SEG%Z1,SEG%X2,SEG%Y2,SEG%Z2
+   WRITE(LU_SMV,'(6F14.4)') SEG%X1,SEG%Y1,SEG%Z1,SEG%X2,SEG%Y2,SEG%Z2
 ENDDO
  
 DEALLOCATE(SEGMENT)
@@ -1670,23 +1684,54 @@ ENDDO
 
 DO N=1,N_TREES
    IF (VEG_FUEL_GEOM(N) == 'CONE' .OR. VEG_FUEL_GEOM(N) == 'CYLINDER') THEN
+      NCFCR = TREE_CFCR_INDEX(N)
       IF (VEG_FUEL_GEOM(N) == 'CONE') VEG_DEVICE = 'CANOPY'
       IF (VEG_FUEL_GEOM(N) == 'CYLINDER') VEG_DEVICE = 'TRUNK'
       WRITE(LU_SMV,'(/A)') 'DEVICE'
       WRITE(LU_SMV,'(1X,A)') TRIM(VEG_DEVICE)
-      WRITE(LU_SMV,'(6F12.5,1X,I3,1X,I5,1X,"%",(A))') X_TREE(N), Y_TREE(N), Z_TREE(N),0.0,0.0, 1.0,0,3,TRIM(VEG_LABELS(N))
-      CROWN_HEIGHT = TREE_H(N)-CROWN_B_H(N)
-      WRITE(LU_SMV,'(3F12.5)') CROWN_B_H(N), CROWN_W(N), CROWN_HEIGHT
+      WRITE(LU_SMV,'(6F12.5,1X,I3,1X,I5,1X,"%",(A))') X_TREE(NCFCR), Y_TREE(NCFCR), Z_TREE(NCFCR), &
+                                                      0.0,0.0, 1.0,0,3,TRIM(VEG_LABELS(N))
+      CROWN_HEIGHT = TREE_H(NCFCR)-CROWN_B_H(NCFCR)
+      WRITE(LU_SMV,'(3F12.5)') CROWN_B_H(NCFCR), CROWN_W(NCFCR), CROWN_HEIGHT
    ENDIF
 ENDDO
 
-! Write out level set slice file name (placeholder)
+! Write out level set slice files variable names (placeholder)
 
 IF (VEG_LEVEL_SET) THEN
+! Level set phi field
    WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
-   WRITE(LU_SMV,'(A)') 'lsfs.sf'
+   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsfs.sf'
    WRITE(LU_SMV,'(A)') 'phifield'
    WRITE(LU_SMV,'(A)') 'phifield'
+   WRITE(LU_SMV,'(A)') '-'
+
+! Level set fire front time of arrival 
+   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
+   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lstoa.sf'
+   WRITE(LU_SMV,'(A)') 'LS TOA'
+   WRITE(LU_SMV,'(A)') 'LS TOA'
+   WRITE(LU_SMV,'(A)') 's'
+
+! Level set fire line intensity field
+   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
+   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsfli.sf'
+   WRITE(LU_SMV,'(A)') 'LS FLI'
+   WRITE(LU_SMV,'(A)') 'LS FLI'
+   WRITE(LU_SMV,'(A)') 'kW/m^2'
+
+! Level set spread rate magnitude field
+   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
+   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsros.sf'
+   WRITE(LU_SMV,'(A)') 'LS ROS'
+   WRITE(LU_SMV,'(A)') 'LS ROS'
+   WRITE(LU_SMV,'(A)') 'm/s'
+
+! Level set Cruz & Alexander probability of crowning field
+   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
+   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsprobc.sf'
+   WRITE(LU_SMV,'(A)') 'LS PROBCROWN'
+   WRITE(LU_SMV,'(A)') 'LS PROBCROWN'
    WRITE(LU_SMV,'(A)') '-'
 ENDIF 
 
@@ -1973,33 +2018,33 @@ MESH_LOOP: DO NM=1,NMESHES
    WRITE(LU_SMV,'(4I5)') M%IBAR,M%JBAR,M%KBAR,EVAC_CODE
 
    WRITE(LU_SMV,'(/A)') 'PDIM'
-   WRITE(LU_SMV,'(9F13.5)') M%XS,M%XF,M%YS,M%YF,M%ZS,M%ZF,(REAL(M%RGB(I),FB)/255._FB,I = 1,3)
+   WRITE(LU_SMV,'(9F14.5)') M%XS,M%XF,M%YS,M%YF,M%ZS,M%ZF,(REAL(M%RGB(I),FB)/255._FB,I = 1,3)
 
    WRITE(LU_SMV,'(/A)') 'TRNX'
    WRITE(LU_SMV,'(I5)') T%NOC(1)
    DO N=1,T%NOC(1)
-      WRITE(LU_SMV,'(I5,2F12.5)') T%IDERIVSTORE(N,1),T%CCSTORE(N,1),T%PCSTORE(N,1)
+      WRITE(LU_SMV,'(I5,2F14.5)') T%IDERIVSTORE(N,1),T%CCSTORE(N,1),T%PCSTORE(N,1)
    ENDDO
    DO I=0,M%IBAR
-      WRITE(LU_SMV,'(I5,F12.5)') I,M%X(I)
+      WRITE(LU_SMV,'(I5,F14.5)') I,M%X(I)
    ENDDO
 
    WRITE(LU_SMV,'(/A)') 'TRNY'
    WRITE(LU_SMV,'(I5)') T%NOC(2)
    DO N=1,T%NOC(2)
-      WRITE(LU_SMV,'(I5,2F12.5)') T%IDERIVSTORE(N,2),T%CCSTORE(N,2),T%PCSTORE(N,2)
+      WRITE(LU_SMV,'(I5,2F14.5)') T%IDERIVSTORE(N,2),T%CCSTORE(N,2),T%PCSTORE(N,2)
    ENDDO
    DO J=0,M%JBAR
-      WRITE(LU_SMV,'(I5,F12.5)') J,M%Y(J)
+      WRITE(LU_SMV,'(I5,F14.5)') J,M%Y(J)
    ENDDO
 
    WRITE(LU_SMV,'(/A)') 'TRNZ'
    WRITE(LU_SMV,'(I5)') T%NOC(3)
    DO N=1,T%NOC(3)
-      WRITE(LU_SMV,'(I5,2F12.5)') T%IDERIVSTORE(N,3),T%CCSTORE(N,3),T%PCSTORE(N,3)
+      WRITE(LU_SMV,'(I5,2F14.5)') T%IDERIVSTORE(N,3),T%CCSTORE(N,3),T%PCSTORE(N,3)
    ENDDO
    DO K=0,M%KBAR
-      WRITE(LU_SMV,'(I5,F12.5)') K,M%Z(K)
+      WRITE(LU_SMV,'(I5,F14.5)') K,M%Z(K)
    ENDDO
  
    ! Write obstacle info to .smv file
@@ -2014,10 +2059,10 @@ MESH_LOOP: DO NM=1,NMESHES
          TEMPCHAR=' % '//OB%PROP_ID
       ENDIF
       IF (OB%TEXTURE(1)<=-998._EB) THEN
-         WRITE(LU_SMV,'(6F12.5,I7,6I4,1X,A33)') OB%X1,OB%X2,OB%Y1,OB%Y2,OB%Z1,OB%Z2,OB%ORDINAL, &
+         WRITE(LU_SMV,'(6F14.5,I7,6I4,1X,A33)') OB%X1,OB%X2,OB%Y1,OB%Y2,OB%Z1,OB%Z2,OB%ORDINAL, &
             OB%SURF_INDEX(-1),OB%SURF_INDEX(1),OB%SURF_INDEX(-2),OB%SURF_INDEX(2),OB%SURF_INDEX(-3),OB%SURF_INDEX(3),TEMPCHAR
       ELSE
-         WRITE(LU_SMV,'(6F12.5,I7,6I4,3F13.5,1X,A33)') OB%X1,OB%X2,OB%Y1,OB%Y2,OB%Z1,OB%Z2,OB%ORDINAL, &
+         WRITE(LU_SMV,'(6F14.5,I7,6I4,3F14.5,1X,A33)') OB%X1,OB%X2,OB%Y1,OB%Y2,OB%Z1,OB%Z2,OB%ORDINAL, &
             OB%SURF_INDEX(-1),OB%SURF_INDEX(1),OB%SURF_INDEX(-2),OB%SURF_INDEX(2),OB%SURF_INDEX(-3),OB%SURF_INDEX(3), &
             OB%TEXTURE(1),OB%TEXTURE(2),OB%TEXTURE(3),TEMPCHAR
       ENDIF
@@ -2165,9 +2210,9 @@ MESH_LOOP: DO NM=1,NMESHES
    DO N=1,M%N_VENT
       VT=>M%VENTS(N)
       IF (VT%TEXTURE(1)<=-998._EB) THEN
-         WRITE(LU_SMV,'(6F12.5,I6,I4)')        VT%X1,VT%X2,VT%Y1,VT%Y2,VT%Z1,VT%Z2,VT%ORDINAL,VT%SURF_INDEX
+         WRITE(LU_SMV,'(6F14.5,I6,I4)')        VT%X1,VT%X2,VT%Y1,VT%Y2,VT%Z1,VT%Z2,VT%ORDINAL,VT%SURF_INDEX
       ELSE
-         WRITE(LU_SMV,'(6F12.5,I6,I4,3F13.5)') VT%X1,VT%X2,VT%Y1,VT%Y2,VT%Z1,VT%Z2,VT%ORDINAL,VT%SURF_INDEX, &
+         WRITE(LU_SMV,'(6F14.5,I6,I4,3F14.5)') VT%X1,VT%X2,VT%Y1,VT%Y2,VT%Z1,VT%Z2,VT%ORDINAL,VT%SURF_INDEX, &
                                                VT%TEXTURE(1),VT%TEXTURE(2),VT%TEXTURE(3)
       ENDIF
    ENDDO
@@ -2175,7 +2220,7 @@ MESH_LOOP: DO NM=1,NMESHES
    DO N=1,NDV
       SURF_INDEX = DEFAULT_SURF_INDEX
       IF (DUMMY_VENT_INDEX(N)>0) SURF_INDEX=M%VENTS(DUMMY_VENT_INDEX(N))%SURF_INDEX
-      WRITE(LU_SMV,'(6F12.5,I6,I4)') M%X(IDV1(N)),M%X(IDV2(N)),M%Y(JDV1(N)),M%Y(JDV2(N)),  &
+      WRITE(LU_SMV,'(6F14.5,I6,I4)') M%X(IDV1(N)),M%X(IDV2(N)),M%Y(JDV1(N)),M%Y(JDV2(N)),  &
                                      M%Z(KDV1(N)),M%Z(KDV2(N)),M%N_VENT+N,SURF_INDEX
    ENDDO
 
@@ -5308,7 +5353,11 @@ SELECT CASE(INDX)
          ENDIF
       ENDIF
 
-      IF (SURFACE(WC%SURF_INDEX)%VEGETATION) THEN     !surface vegetation height
+      IF (SURFACE(WC%SURF_INDEX)%VEGETATION) THEN     !surface vegetation height for boundary fuel model
+         SOLID_PHASE_OUTPUT = WC%VEG_HEIGHT
+      ENDIF
+
+      IF (SURFACE(WC%SURF_INDEX)%VEG_LSET_SPREAD) THEN !surface vegetation height for level set model
          SOLID_PHASE_OUTPUT = WC%VEG_HEIGHT
       ENDIF
 
@@ -6041,6 +6090,7 @@ SUBROUTINE DUMP_VEG(T)
 ! Write out total dry and moisture mass in vegetation (fuel element model)
  
 REAL(EB), INTENT(IN) :: T
+REAL(EB) :: NPRTS_TREE
 REAL(FB) :: STIME
 INTEGER :: I,NM,N_TREE
 LOGICAL :: VEG_PRESENT
@@ -6059,19 +6109,32 @@ MESH_LOOP: DO NM=1,NMESHES
 !  R_SVxPR = 1.0_EB/PC%VEG_SV*LP%VEG_PACKING_RATIO
    DO N_TREE = 1, N_TREES_OUT
     TREE_OUTPUT_DATA_TOTAL(N_TREE,1) = TREE_OUTPUT_DATA_TOTAL(N_TREE,1) + TREE_OUTPUT_DATA(N_TREE,1,NM) !C
-    TREE_OUTPUT_DATA_TOTAL(N_TREE,2) = TREE_OUTPUT_DATA_TOTAL(N_TREE,2) + TREE_OUTPUT_DATA(N_TREE,2,NM) !kg
-    TREE_OUTPUT_DATA_TOTAL(N_TREE,3) = TREE_OUTPUT_DATA_TOTAL(N_TREE,3) + TREE_OUTPUT_DATA(N_TREE,3,NM) !kg
-    TREE_OUTPUT_DATA_TOTAL(N_TREE,4) = TREE_OUTPUT_DATA_TOTAL(N_TREE,4) + TREE_OUTPUT_DATA(N_TREE,4,NM) !kW
-    TREE_OUTPUT_DATA_TOTAL(N_TREE,5) = TREE_OUTPUT_DATA_TOTAL(N_TREE,5) + TREE_OUTPUT_DATA(N_TREE,5,NM) !kW
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,2) = TREE_OUTPUT_DATA_TOTAL(N_TREE,2) + TREE_OUTPUT_DATA(N_TREE,2,NM) !C
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,3) = TREE_OUTPUT_DATA_TOTAL(N_TREE,3) + TREE_OUTPUT_DATA(N_TREE,3,NM) !kg veg fuel
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,4) = TREE_OUTPUT_DATA_TOTAL(N_TREE,4) + TREE_OUTPUT_DATA(N_TREE,4,NM) !kg veg moist
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,5) = TREE_OUTPUT_DATA_TOTAL(N_TREE,5) + TREE_OUTPUT_DATA(N_TREE,5,NM) !kg veg char
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,6) = TREE_OUTPUT_DATA_TOTAL(N_TREE,6) + TREE_OUTPUT_DATA(N_TREE,6,NM) !kg veg ash
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,7) = TREE_OUTPUT_DATA_TOTAL(N_TREE,7) + TREE_OUTPUT_DATA(N_TREE,7,NM) !kW Qconv
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,8) = TREE_OUTPUT_DATA_TOTAL(N_TREE,8) + TREE_OUTPUT_DATA(N_TREE,8,NM) !kW Qrad
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,9) = TREE_OUTPUT_DATA_TOTAL(N_TREE,9) + TREE_OUTPUT_DATA(N_TREE,9,NM) !# part
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,10) = TREE_OUTPUT_DATA_TOTAL(N_TREE,10) + TREE_OUTPUT_DATA(N_TREE,10,NM) !kg char loss
+    TREE_OUTPUT_DATA_TOTAL(N_TREE,11) = TREE_OUTPUT_DATA_TOTAL(N_TREE,11) + TREE_OUTPUT_DATA(N_TREE,11,NM) !kW Qchar
    ENDDO
 
 ENDDO MESH_LOOP
  
 IF (VEG_PRESENT) THEN
  DO I=1,N_TREES_OUT
-  WRITE(LU_VEG_OUT(I),'(6(ES12.4))')T,TREE_OUTPUT_DATA_TOTAL(I,1),TREE_OUTPUT_DATA_TOTAL(I,2), &
-                                      TREE_OUTPUT_DATA_TOTAL(I,3),TREE_OUTPUT_DATA_TOTAL(I,4), &
-                                      TREE_OUTPUT_DATA_TOTAL(I,5)
+  NPRTS_TREE = TREE_OUTPUT_DATA_TOTAL(I,9) !# particles in tree
+!print*,'dump, tree, # part per tree',I,NPRTS_TREE
+! WRITE(LU_VEG_OUT(I),'(6(ES12.4))')
+  WRITE(LU_VEG_OUT(I),'(ES12.4,A,ES12.4,A,ES12.4,A,ES12.4,A,ES12.4,A,ES12.4,A,ES12.4,A,ES12.4,A,ES12.4,A,ES12.4,A,ES12.4)') &
+        T,', ', &
+        TREE_OUTPUT_DATA_TOTAL(I,1)/NPRTS_TREE,', ',TREE_OUTPUT_DATA_TOTAL(I,2)/NPRTS_TREE,', ', &
+        TREE_OUTPUT_DATA_TOTAL(I,3)           ,', ',TREE_OUTPUT_DATA_TOTAL(I,4)           ,', ', &
+        TREE_OUTPUT_DATA_TOTAL(I,5)           ,', ',TREE_OUTPUT_DATA_TOTAL(I,6)           ,', ', &
+        TREE_OUTPUT_DATA_TOTAL(I,7)/NPRTS_TREE,', ',TREE_OUTPUT_DATA_TOTAL(I,8)/NPRTS_TREE,', ', &
+        TREE_OUTPUT_DATA_TOTAL(I,10)          ,', ',TREE_OUTPUT_DATA_TOTAL(I,11) 
  ENDDO
 ENDIF
                                            
@@ -7025,19 +7088,43 @@ SUBROUTINE DUMP_UVW(NM,FN_UVW)
 ! Dump UVW file
 
 USE COMP_FUNCTIONS, ONLY: GET_FILE_NUMBER
-INTEGER  :: I,J,K,LU_UVW
+INTEGER  :: I,J,K,LU_UVW,IMIN,JMIN,KMIN,IMAX,JMAX,KMAX
 INTEGER, INTENT(IN) :: NM
-CHARACTER(*), INTENT(IN) :: FN_UVW
+CHARACTER(80), INTENT(IN) :: FN_UVW
+CHARACTER(3) :: S1,S2,S3,S4,S5,S6
  
 CALL POINT_TO_MESH(NM)
 
+SELECT CASE (PERIODIC_TEST)
+   CASE(2,9)
+      IMIN=1
+      JMIN=1
+      KMIN=1
+   CASE DEFAULT
+      IMIN=0
+      JMIN=0
+      KMIN=0
+END SELECT
+IMAX = IBAR
+JMAX = JBAR
+KMAX = KBAR
+
 LU_UVW = GET_FILE_NUMBER()
-OPEN(UNIT=LU_UVW,FILE=FN_UVW,FORM='FORMATTED',STATUS='UNKNOWN')
- 
-DO K=1,KBAR
-   DO J=1,JBAR
-      DO I=1,IBAR
-         WRITE(LU_UVW,'(E15.8,A,E15.8,A,E15.8)') U(I,J,K),',',V(I,J,K),',',W(I,J,K)
+OPEN(UNIT=LU_UVW,FILE=TRIM(FN_UVW),FORM='FORMATTED',STATUS='UNKNOWN')
+
+WRITE(S1,'(I3)') IMIN; S1 = ADJUSTL(S1)
+WRITE(S2,'(I3)') IMAX; S2 = ADJUSTL(S2)
+WRITE(S3,'(I3)') JMIN; S3 = ADJUSTL(S3)
+WRITE(S4,'(I3)') JMAX; S4 = ADJUSTL(S4)
+WRITE(S5,'(I3)') KMIN; S5 = ADJUSTL(S5)
+WRITE(S6,'(I3)') KMAX; S6 = ADJUSTL(S6)
+
+IF (PERIODIC_TEST/=2) WRITE(LU_UVW,'(A)') TRIM(S1)//','//TRIM(S2)//','//TRIM(S3)//','//TRIM(S4)//','//TRIM(S5)//','//TRIM(S6)
+
+DO K=KMIN,KMAX
+   DO J=JMIN,JMAX
+      DO I=IMIN,IMAX
+         WRITE(LU_UVW,'(E22.15,A,E22.15,A,E22.15)') U(I,J,K),',',V(I,J,K),',',W(I,J,K)
       ENDDO
    ENDDO
 ENDDO
@@ -7045,6 +7132,32 @@ ENDDO
 CLOSE(LU_UVW)
 
 END SUBROUTINE DUMP_UVW
+
+!SUBROUTINE DUMP_UVW(NM,FN_UVW)
+!
+!! Dump UVW file
+!
+!USE COMP_FUNCTIONS, ONLY: GET_FILE_NUMBER
+!INTEGER  :: I,J,K,LU_UVW
+!INTEGER, INTENT(IN) :: NM
+!CHARACTER(*), INTENT(IN) :: FN_UVW
+! 
+!CALL POINT_TO_MESH(NM)
+!
+!LU_UVW = GET_FILE_NUMBER()
+!OPEN(UNIT=LU_UVW,FILE=FN_UVW,FORM='FORMATTED',STATUS='UNKNOWN')
+! 
+!DO K=1,KBAR
+!   DO J=1,JBAR
+!      DO I=1,IBAR
+!         WRITE(LU_UVW,'(E15.8,A,E15.8,A,E15.8)') U(I,J,K),',',V(I,J,K),',',W(I,J,K)
+!      ENDDO
+!   ENDDO
+!ENDDO
+!
+!CLOSE(LU_UVW)
+!
+!END SUBROUTINE DUMP_UVW
 
 
 SUBROUTINE GET_REV_dump(MODULE_REV,MODULE_DATE)

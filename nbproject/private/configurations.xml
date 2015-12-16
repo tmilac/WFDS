@@ -35,7 +35,6 @@
         <in>init.mod</in>
         <in>irad.f90</in>
         <in>isob.c</in>
-        <in>isodefs.mod</in>
         <in>main.f90</in>
         <in>mass.f90</in>
         <in>mass.mod</in>

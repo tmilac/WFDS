@@ -878,30 +878,32 @@ ENDIF MEAN_FORCING_Z
 
 ! Surface vegetation drag 
 
-WFDS_BNDRYFUEL_IF: IF (WFDS_BNDRYFUEL) THEN
-   VEG_DRAG(0,:) = VEG_DRAG(1,:)
-   K=1
+WFDS_BNDRYFUEL_IF: IF (WFDS_BNDRYFUEL .OR. VEG_LEVEL_SET_COUPLED) THEN
+ DO K=1,MIN(8,KBAR)
+   VEG_DRAG(0,:,K) = VEG_DRAG(1,:,K)
    DO J=1,JBAR
       DO I=0,IBAR
          VEG_UMAG = SQRT(UU(I,J,K)**2 + VV(I,J,K)**2 + WW(I,J,K)**2) ! VEG_UMAG=KRES(I,J,K)
-         FVX(I,J,K) = FVX(I,J,K) + VEG_DRAG(I,J)*VEG_UMAG*UU(I,J,K)
+         FVX(I,J,K) = FVX(I,J,K) + VEG_DRAG(I,J,K)*VEG_UMAG*UU(I,J,K)
       ENDDO
    ENDDO
 
-   VEG_DRAG(:,0) = VEG_DRAG(:,1)
+   VEG_DRAG(:,0,K) = VEG_DRAG(:,1,K)
    DO J=0,JBAR
       DO I=1,IBAR
          VEG_UMAG = SQRT(UU(I,J,K)**2 + VV(I,J,K)**2 + WW(I,J,K)**2)
-         FVY(I,J,K) = FVY(I,J,K) + VEG_DRAG(I,J)*VEG_UMAG*VV(I,J,K)
+         FVY(I,J,K) = FVY(I,J,K) + VEG_DRAG(I,J,K)*VEG_UMAG*VV(I,J,K)
       ENDDO
    ENDDO
 
    DO J=1,JBAR
       DO I=1,IBAR
          VEG_UMAG = SQRT(UU(I,J,K)**2 + VV(I,J,K)**2 + WW(I,J,K)**2)
-         FVZ(I,J,K) = FVZ(I,J,K) + VEG_DRAG(I,J)*VEG_UMAG*WW(I,J,K)
+         FVZ(I,J,K) = FVZ(I,J,K) + VEG_DRAG(I,J,K)*VEG_UMAG*WW(I,J,K)
       ENDDO
    ENDDO
+
+ ENDDO
 ENDIF WFDS_BNDRYFUEL_IF
 
 ! Baroclinic torque correction
