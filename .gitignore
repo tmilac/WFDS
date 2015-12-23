@@ -3,7 +3,9 @@
 *~
 *.mod
 *.out
-nbproject
+*.smv
+
+/nbproject/private
 
 # WFDS executables
 
