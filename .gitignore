@@ -4,6 +4,8 @@
 *.mod
 *.out
 *.smv
+*.end
+*.csv
 
 /nbproject/private
 
