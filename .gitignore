@@ -2,6 +2,8 @@
 *.[oa]
 *~
 *.mod
+*.out
+nbproject
 
 # WFDS executables
 
