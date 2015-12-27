@@ -749,7 +749,6 @@ PARTICLE_LOOP: DO I=1,NLP
  MU_AIR   = MU_Z(MIN(5000,NINT(TMP_GAS)),0)*SPECIES_MIXTURE(0)%MW
  K_AIR    = CPOPR*MU_AIR !W/m.K
 
-NDT_CYCLES=1
 TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
 
 ! Veg thermophysical properties
@@ -989,7 +988,6 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
 !the char oxidation reaction since it would be inconsistent with the state
 !relation for oxygen based on the conserved scalar approach for gas phase
 !combustion)
-!  MPV_CHAR_LOSS = 0.0_EB
      IF_CHAR_OXIDATION: IF (PC%VEG_CHAR_OXIDATION) THEN
        ZZ_GET(1:N_TRACKED_SPECIES) = ZZ(II,JJ,KK,1:N_TRACKED_SPECIES)
        CALL GET_MASS_FRACTION(ZZ_GET,O2_INDEX,Y_O2)
@@ -1008,6 +1006,7 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
 !      LP%VEG_SV     = PC%VEG_SV*(ORIG_PACKING_RATIO/LP%VEG_PACKING_RATIO)**0.333_EB 
 !      LP%VEG_KAPPA  = 0.25_EB*LP%VEG_SV*LP%VEG_PACKING_RATIO
 
+! Remove partical if char is fully consumed
        IF (MPV_CHAR <= MPV_CHAR_MIN .AND. MPV_VEG <= MPV_VEG_MIN) THEN 
 !        IF (MPV_ASH >= MPV_ASH_MAX .AND. MPV_VEG <= MPV_VEG_MIN) THEN 
 !        CP_MASS_VEG_SOLID = CP_CHAR*MPV_CHAR_MIN
