@@ -1855,7 +1855,7 @@ INTEGER, INTENT(IN) :: NM
 INTEGER :: I,IM1,IM2,IIG,IP1,IP2,IW,J,JJG,JM1,JP1,KKG
 REAL(EB) :: LX,SR_MAX,UMAX_LS,VMAX_LS
 REAL(EB) :: G_EAST,G_WEST,G_SOUTH,G_NORTH
-REAL(EB) :: VERT_CANOPY_EXTENT,TOTAL_VEG_HEIGHT
+REAL(EB) :: VERT_CANOPY_EXTENT
 
 REAL(EB), ALLOCATABLE, DIMENSION(:) :: X_LS,Y_LS
 
@@ -2234,10 +2234,9 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 !---- Slope factors
       CALL ROTH_SLOPE_COEFF(NM,IIG,JJG,SF%VEG_LSET_BETA)
 !---- Wind, combined wind & slope, and midflame windspeed factors
-      TOTAL_VEG_HEIGHT = SF%VEG_LSET_SURF_HEIGHT
-      IF (SF%VEG_LSET_CROWN_VEG) TOTAL_VEG_HEIGHT = TOTAL_VEG_HEIGHT + SF%VEG_LSET_CANOPY_HEIGHT
-      CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_BETA,TOTAL_VEG_HEIGHT,SF%VEG_LSET_SIGMA, &
-           SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS,SF%VEG_LSET_CROWN_VEG,SF%VEG_LSET_WAF_UNSHELTERED,SF%VEG_LSET_WAF_SHELTERED)
+       CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_BETA,SF%VEG_LSET_SURF_HEIGHT,            &
+          SF%VEG_LSET_CANOPY_HEIGHT,SF%VEG_LSET_SIGMA,SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS,SF%VEG_LSET_CROWN_VEG, &
+          SF%VEG_LSET_WAF_UNSHELTERED,SF%VEG_LSET_WAF_SHELTERED)
     ENDIF
 
 !-- Cruz et al. crown fire head fire ROS model
@@ -2321,62 +2320,106 @@ PHI_S(I,J) = SQRT(PHI_S_X(I,J)**2 + PHI_S_Y(I,J)**2) !used in LS paper
 END SUBROUTINE ROTH_SLOPE_COEFF
 
 !************************************************************************************************
-SUBROUTINE ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,I,J,K,VEG_BETA,SURF_VEG_HT,VEG_SIGMA,ZEROWINDSLOPE_ROS,CROWN_VEG, &
+SUBROUTINE ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,I,J,K,VEG_BETA,SURF_VEG_HT,CANOPY_VEG_HT,VEG_SIGMA,ZEROWINDSLOPE_ROS,CROWN_VEG, &
                                            WAF_UNSHELTERED,WAF_SHELTERED)
 !************************************************************************************************
 !
 ! Compute components and magnitude of the wind coefficient vector and the combined
 ! wind and slope coefficient vectors and use them along with the user defined zero wind, zero slope
 ! Rothermel (or Behave) surface fire ROS in the Rothermel surface fire spread rate
-! formula to obtain the magnitude of the local surface head fire ROS 
+! formula to obtain the magnitude of the local surface head fire ROS. Top of vegetation is assumed
+! to be at the bottom of the computational doamin.
 
 LOGICAL,  INTENT(IN) :: CROWN_VEG
 INTEGER,  INTENT(IN) :: I,J,K,NM
-REAL(EB), INTENT(IN) :: VEG_BETA,SURF_VEG_HT,VEG_SIGMA,WAF_UNSHELTERED,WAF_SHELTERED,ZEROWINDSLOPE_ROS
+REAL(EB), INTENT(IN) :: CANOPY_VEG_HT,SURF_VEG_HT,VEG_BETA,VEG_SIGMA,WAF_UNSHELTERED,WAF_SHELTERED,  &
+                        ZEROWINDSLOPE_ROS
+LOGICAL :: UNIFORM_UV
 INTEGER :: KDUM,KWIND
-REAL(EB) :: CONSFCTR,FCTR1,FCTR2,PHX,PHY,MAG_PHI,WAF_LOG,Z6PH
+REAL(EB) :: CONSFCTR,FCTR1,FCTR2,PHX,PHY,MAG_PHI,U6PH,VEG_HT,V6PH,WAF_6M,WAF_MID,Z6PH,ZWFDS
 
-Z6PH  = 6.1_EB + SURF_VEG_HT
-FCTR1 = 0.64_EB*SURF_VEG_HT !constant in logrithmic wind profile Albini & Baughman INT-221 1979
-FCTR2 = 1.0_EB/(0.13_EB*SURF_VEG_HT) !constant in log wind profile
+!print*,'n_csvf',n_csvf
+!print*,'crown_veg',crown_veg
+!print*,'k,z(k-1),z(k)',k,z(k-1),z(k)
 
-!Find k array index for first cell over vegetation height + 6.1 m 
-KWIND = 0
-KDUM  = K
-!print*,i,j
-!print 1116,k,kwind,kdum,zc(k),u(i,j,k)
-!1116 format('(vege,windslpcoeff)',1x,3(I3),2x,2(e15.5))
-DO WHILE (ZC(KDUM)-ZC(K) <= Z6PH)
-  KWIND = KDUM
-  KDUM  = KDUM + 1
-ENDDO
-!KWIND = KWIND + 1
-IF (ZC(KBAR) < Z6PH) KWIND=KBAR
-!print 1116,k,kwind,kdum,zc(kwind),u(i,j,kwind)
-!print*,'-------------------------------------------------------'
-
-WAF_LOG = LOG((Z6PH-FCTR1)*FCTR2)/LOG((ZC(KWIND)-K-FCTR1)*FCTR2) !wind adjustment factor from log wind profile
-IF (VEG_LEVEL_SET_UNCOUPLED) WAF_LOG = 1.0_EB 
-
-U_LS(I,J) = WAF_LOG*U(I,J,KWIND) !U at 6.1 m above veg height
-V_LS(I,J) = WAF_LOG*V(I,J,KWIND) !V at 6.1 m above veg height
-    
-!Obtain mid-flmame wind speed
-!Log profile based wind adjustiment are from Andrews 2012, USDA FS Gen Tech Rep. RMRS-GTR-266 (with added SI conversion)
-!When using Andrews log formula for sheltered wind the crown fill portion, f, is 0.2
-IF (.NOT. CROWN_VEG) THEN
- UMF_TMP = WAF_UNSHELTERED
- IF (WAF_UNSHELTERED == -99.0_EB) &
-     UMF_TMP=1.83_EB/LOG((20.0_EB + 1.18_EB * SURF_VEG_HT)/(0.43_EB * SURF_VEG_HT))!used in LS vs FS paper
-ELSE
- UMF_TMP = WAF_SHELTERED
- IF (WAF_SHELTERED == -99.0_EB)   &
-     UMF_TMP=0.555_EB/(SQRT(0.20_EB*3.28_EB*SURF_VEG_HT)*LOG((20.0_EB + 1.18_EB * SURF_VEG_HT)/(0.43_EB * SURF_VEG_HT)))
+VEG_HT = MAX(SURF_VEG_HT,CANOPY_VEG_HT)
+FCTR1 = 0.64_EB*VEG_HT !constant in logrithmic wind profile Albini & Baughman INT-221 1979 or 
+!                       !Andrews RMRS-GTR-266 2012 (p. 8, Eq. 4)
+FCTR2 = 1.0_EB/(0.13_EB*VEG_HT) !constant in log wind profile
+Z6PH  = 6.1_EB + VEG_HT
+ZWFDS = ZC(K) - Z(K-1) !Height of velocity in first cell above veg, ZC(K)=cell center, Z(K-1)=height of K cell bottom
+UNIFORM_UV = .FALSE.
+!
+!Find the wind components at 6.1 m above the vegetation for the case of a uniform
+!wind field (i.e., equivalent to conventional FARSITE). This was used in 2015 LS & 
+!FARSITE paper. N_CSVF = 0 when no initial wind field has been read in from a file.
+IF (N_CSVF == 0 .AND. VEG_LEVEL_SET_UNCOUPLED) THEN
+  U6PH = U_LS(I,J) 
+  V6PH = V_LS(I,J)
+  UNIFORM_UV = .TRUE.
 ENDIF
-
-!Factor 60 converts U from m/s to m/min which is used in the Rothermel model.  
-UMF_X(I,J) = UMF_TMP * U_LS(I,J) * 60.0_EB
-UMF_Y(I,J) = UMF_TMP * V_LS(I,J) * 60.0_EB
+!
+!Find the wind components at 6.1 m above the vegetation for the case of nonuniform wind field. 
+!The wind field can be predefined and read in at code initialization or the level set computation 
+!is coupled to the CFD computation
+!
+!---U,V at 6.1 above the veg height computed from the WAF when vegetation height + 6.1 m is above or 
+!   equal to the first u,v location on grid
+!print*,'zwfds,z6ph,uniform_uv',zwfds,z6ph,uniform_uv
+IF (ZWFDS <= 6.1_EB .AND. .NOT. UNIFORM_UV) THEN 
+!Find k array index for first grid cell that has ZC > 6.1 m 
+   KWIND = 0
+   KDUM  = K
+!print 1116,k,kwind,kdum,zc(k),u(i,j,k)
+   DO WHILE (ZWFDS <= 6.1_EB) !this assumes the bottom computational boundary = top of veg
+      KWIND = KDUM
+      KDUM  = KDUM + 1
+      ZWFDS = ZC(KDUM) - Z(K-1)
+   ENDDO
+   ZWFDS = ZC(KWIND) - Z(K-1)
+   WAF_6M = LOG((Z6PH-FCTR1)*FCTR2)/LOG((ZWFDS+VEG_HT-FCTR1)*FCTR2) !wind adjustment factor from log wind profile
+   U6PH  = WAF_6M*U(I,J,KWIND)
+   V6PH  = WAF_6M*V(I,J,KWIND)
+ENDIF
+!
+!---U,V at 6.1 m above the veg height computed from the WAF when vegetation height + 6.1 m is below
+!   first u,v location on grid
+IF (ZWFDS > 6.1_EB .AND. .NOT. UNIFORM_UV) THEN 
+   WAF_6M = LOG((Z6PH-FCTR1)*FCTR2)/LOG((ZWFDS+VEG_HT-FCTR1)*FCTR2) 
+   U6PH  = WAF_6M*U(I,J,K)
+   V6PH  = WAF_6M*V(I,J,K)
+ENDIF
+!!print*,'u,v',u(i,j,k),v(i,j,k)
+!!print*,'waf_log',waf_log
+!!print*,'u6ph,v6ph',u6ph,v6ph
+!
+!! IF (ZC(KBAR) < Z6PH) KWIND=KBAR  !!!!!!******************WHERE SHOULD THIS GO??????????????
+!!print 1116,k,kwind,kdum,zc(kwind),u(i,j,kwind)
+!1116 format('(vege,windslpcoeff)',1x,3(I3),2x,2(e15.5))
+!
+!!Obtain mid-flmame wind adjustment factor
+!!Log profile based wind adjustiment for unsheltered or sheltered condtions are from 
+!!Andrews 2012, USDA FS Gen Tech Rep. RMRS-GTR-266 (with added SI conversion)
+!!When using Andrews log formula for sheltered wind the crown fill portion, f, is 0.2
+IF (.NOT. CROWN_VEG) THEN
+  WAF_MID = WAF_UNSHELTERED !WAF is from input file
+  IF (WAF_UNSHELTERED == -99.0_EB) &
+      WAF_MID=1.83_EB/LOG((20.0_EB + 1.18_EB*VEG_HT)/(0.43_EB*VEG_HT))!used in LS vs FS paper
+!     UMF = WAF_MID
+ELSE
+  WAF_MID = WAF_SHELTERED !WAF is from input file
+  IF (WAF_SHELTERED == -99.0_EB)   &
+      WAF_MID=0.555_EB/(SQRT(0.20_EB*3.28_EB*VEG_HT)*LOG((20.0_EB + 1.18_EB*VEG_HT)/(0.43_EB*VEG_HT)))
+ENDIF
+!
+!!print*,'waf_mid',waf_mid
+!!print*,'-------------------------------------------------------'
+!!Factor 60 converts U from m/s to m/min which is used in the Rothermel model.  
+UMF_X(I,J) = WAF_MID * U6PH * 60.0_EB
+UMF_Y(I,J) = WAF_MID * V6PH * 60.0_EB
+!UMF_TMP = 1.83_EB / LOG((20.0_EB + 1.18_EB * SURF_VEG_HT) /(0.43_EB * SURF_VEG_HT))
+!UMF_X(I,J) = UMF_TMP * U_LS(I,J) * 60.0_EB
+!UMF_Y(I,J) = UMF_TMP * V_LS(I,J) * 60.0_EB
   
 !Variables used in Phi_W formulas below (Rothermel model)
 B_ROTH = 0.15988_EB * (VEG_SIGMA**0.54_EB)
@@ -2516,30 +2559,80 @@ SUBROUTINE CRUZ_CROWN_FIRE_HEADROS(NM,I,J,K,CBD,EFFM,FSG,SFC,PROB_PASSIVE,PROB_A
 INTEGER,  INTENT(IN) :: I,J,K,NM
 REAL(EB), INTENT(IN) :: CBD,EFFM,FSG,SFC,VERT_CANOPY_EXTENT,CANOPY_HEIGHT
 CHARACTER(25), INTENT(IN) :: SURFACE_FIRE_HEAD_ROS_MODEL
+LOGICAL :: UNIFORM_UV
 INTEGER :: KDUM,KWIND
 REAL(EB) :: CAC,CROSA,CROSP,CRLOAD,MPM_TO_MPS,MPS_TO_KPH,EXPG,G,FCTR1,FCTR2,GMAX,PROB,PROB_PASSIVE,PROB_ACTIVE, &
-            PROB_CROWN,UMAG,UMF_TMP,WAF_LOG,Z10PH
+            PROB_CROWN,U10PH,V10PH,UMAG,UMF_TMP,VEG_HT,WAF_10m,Z10PH,ZWFDS
 
 MPM_TO_MPS = 1._EB/60._EB
 MPS_TO_KPH = 3600._EB/1000._EB
-Z10PH      = 10._EB + CANOPY_HEIGHT
-FCTR1      = 0.64_EB*CANOPY_HEIGHT !constant in logrithmic wind profile Albini & Baughman INT-221 1979
-FCTR2      = 1.0_EB/(0.13_EB*CANOPY_HEIGHT) !constant in log wind profile
+!Z10PH      = 10._EB + CANOPY_HEIGHT
+!FCTR1      = 0.64_EB*CANOPY_HEIGHT !constant in logrithmic wind profile Albini & Baughman INT-221 1979
+!FCTR2      = 1.0_EB/(0.13_EB*CANOPY_HEIGHT) !constant in log wind profile
 
 !Find first k array index corresponding to ZC > 10 m + CANOPY_HEIGHT.
-KWIND = 0
-KDUM  = K
-DO WHILE (ZC(KDUM)-ZC(K) <= Z10PH)
-  KWIND = KDUM
-  KDUM  = KDUM + 1
-ENDDO
-!KWIND = KWIND + 1
-IF (ZC(KBAR) < Z10PH) KWIND=KBAR
+!KWIND = 0
+!KDUM  = K
+!DO WHILE (ZC(KDUM)-ZC(K) <= Z10PH)
+!  KWIND = KDUM
+!  KDUM  = KDUM + 1
+!ENDDO
+!!KWIND = KWIND + 1
+!IF (ZC(KBAR) < Z10PH) KWIND=KBAR
+!
+VEG_HT = CANOPY_HEIGHT
+FCTR1 = 0.64_EB*VEG_HT !constant in logrithmic wind profile Albini & Baughman INT-221 1979 or 
+!                       !Andrews RMRS-GTR-266 2012 (p. 8, Eq. 4)
+FCTR2 = 1.0_EB/(0.13_EB*VEG_HT) !constant in log wind profile
+Z10PH  = 10.0_EB + VEG_HT
+ZWFDS = ZC(K) - Z(K-1) !Height of velocity in first cell above veg, ZC(K)=cell center, Z(K-1)=height of K cell bottom
+UNIFORM_UV = .FALSE.
+!
+!Find the wind components at 10 m above the vegetation for the case of a uniform
+!wind field (i.e., equivalent to conventional FARSITE). 
+IF (N_CSVF == 0 .AND. VEG_LEVEL_SET_UNCOUPLED) THEN
+  U10PH = U_LS(I,J) 
+  V10PH = V_LS(I,J)
+  UNIFORM_UV = .TRUE.
+ENDIF
+!
+!Find the wind components at 10 m above the vegetation for the case of nonuniform wind field. 
+!The wind field can be predefined and read in at code initialization or the level set computation 
+!is coupled to the CFD computation
+!
+!---U,V at 10 m above the veg height computed from the WAF when vegetation height + 10 m is above or 
+!   equal to the first u,v location on grid
+!print*,'zwfds,z6ph,uniform_uv',zwfds,z6ph,uniform_uv
+IF (ZWFDS <= 10.0_EB .AND. .NOT. UNIFORM_UV) THEN 
+!Find k array index for first grid cell that has ZC > 10 m 
+   KWIND = 0
+   KDUM  = K
+!print 1116,k,kwind,kdum,zc(k),u(i,j,k)
+   DO WHILE (ZWFDS <= 10.0_EB) !this assumes the bottom computational boundary = top of veg
+      KWIND = KDUM
+      KDUM  = KDUM + 1
+      ZWFDS = ZC(KDUM) - Z(K-1)
+   ENDDO
+   ZWFDS = ZC(KWIND) - Z(K-1)
+   WAF_10M = LOG((Z10PH-FCTR1)*FCTR2)/LOG((ZWFDS+VEG_HT-FCTR1)*FCTR2) !wind adjustment factor from log wind profile
+   U10PH  = WAF_10M*U(I,J,KWIND)
+   V10PH  = WAF_10M*V(I,J,KWIND)
+ENDIF
+!
+!---U,V at 10 m above the veg height computed from the WAF when vegetation height + 10 m is below the 
+!   first u,v location on grid
+IF (ZWFDS > 10.0_EB .AND. .NOT. UNIFORM_UV) THEN 
+   WAF_10M = LOG((Z10PH-FCTR1)*FCTR2)/LOG((ZWFDS+VEG_HT-FCTR1)*FCTR2) 
+   U10PH  = WAF_10M*U(I,J,K)
+   V10PH  = WAF_10M*V(I,J,K)
+ENDIF
 
-UMAG = SQRT(U(I,J,KWIND)**2 + V(I,J,KWIND)**2)*MPS_TO_KPH !km/hr
-WAF_LOG = LOG((Z10PH-FCTR1)*FCTR2)/LOG((ZC(KWIND)-ZC(K)-FCTR1)*FCTR2) !wind adjustment factor from log wind profile
-IF (VEG_LEVEL_SET_UNCOUPLED) WAF_LOG = 1.0_EB 
-UMAG = WAF_LOG*UMAG !wind at 10 m above canopy
+UMAG = SQRT(U10PH**2 + V10PH**2)*MPS_TO_KPH !wind magnitude at 10 m above canopy, km/hr
+
+!UMAG = SQRT(U(I,J,KWIND)**2 + V(I,J,KWIND)**2)*MPS_TO_KPH !km/hr
+!WAF_LOG = LOG((Z10PH-FCTR1)*FCTR2)/LOG((ZC(KWIND)-ZC(K)-FCTR1)*FCTR2) !wind adjustment factor from log wind profile
+!IF (VEG_LEVEL_SET_UNCOUPLED) WAF_LOG = 1.0_EB 
+!UMAG = WAF_LOG*UMAG !wind magnitude at 10 m above canopy
 !if(i==31 .and. j==25)print 2000,kwind,canopy_height,z10ph,zc(kwind),waf_log,umag/mps_to_kph
 !2000 format('vege:kwind,canopy height,z10ph,zc,waf,umag ',I3,2x,5(e15.5))
 
@@ -2549,7 +2642,8 @@ UMAG = WAF_LOG*UMAG !wind at 10 m above canopy
 !positive x-axis  
 
 !Note, unlike the Rothermel ROS case, the slope is assumed to be zero at this point.
-THETA_ELPS(I,J) = ATAN2(V(I,J,KWIND),U(I,J,KWIND))
+THETA_ELPS(I,J) = ATAN2(V10PH,U10PH)
+!THETA_ELPS(I,J) = ATAN2(V(I,J,KWIND),U(I,J,KWIND))
         
 !The following two lines convert ATAN2 output to compass system (0 to 2 pi CW from +Y-axis)
 THETA_ELPS(I,J) = PIO2 - THETA_ELPS(I,J)
@@ -2616,7 +2710,7 @@ INTEGER :: J_FLANK,I,IIG,IW,J,JJG,KKG
 INTEGER :: IDUM,JDUM,KDUM,KGRID,KWIND
 LOGICAL :: IGNITION = .FALSE.
 REAL(EB) :: BURNOUT_FCTR,BURNOUT_TIME,FLI,HEAD_WIDTH_FCTR,IGNITION_WIDTH_Y,ROS_FLANK1,R_BURNOUT_FCTR,TIME_LS_LAST, &
-            TOTAL_FUEL_LOAD,TOTAL_VEG_HEIGHT,VERT_CANOPY_EXTENT
+            TOTAL_FUEL_LOAD,VERT_CANOPY_EXTENT
 REAL(EB) :: PHI_CHECK
 REAL(FB) :: TIME_LS_OUT
 
@@ -2748,7 +2842,9 @@ DO WHILE (TIME_LS < T_FINAL)
 
   IF (.NOT. SF%VEG_LSET_SPREAD) CYCLE WALL_CELL_LOOP
 
-! Update quantities used in the spread rate computation if the Level Set and CFD computation are coupled.
+!
+!****** Update quantities used in the spread rate computation if the Level Set and CFD computation are coupled.
+!
   IF_CFD_COUPLED: IF (VEG_LEVEL_SET_COUPLED) THEN
 
     KKG = WC%KKG
@@ -2762,11 +2858,9 @@ DO WHILE (TIME_LS < T_FINAL)
 
 !---Ellipse assumption with Rothermel head fire ROS (== FARSITE)
       IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROTHERMEL') THEN 
-        TOTAL_VEG_HEIGHT = SF%VEG_LSET_SURF_HEIGHT
-        IF (SF%VEG_LSET_CROWN_VEG) TOTAL_VEG_HEIGHT = TOTAL_VEG_HEIGHT + SF%VEG_LSET_CANOPY_HEIGHT
-        CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,                                                  &
-           SF%VEG_LSET_BETA,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_SIGMA,SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS,     &
-           SF%VEG_LSET_CROWN_VEG,SF%VEG_LSET_WAF_UNSHELTERED,SF%VEG_LSET_WAF_SHELTERED)
+        CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_BETA,SF%VEG_LSET_SURF_HEIGHT,            &
+           SF%VEG_LSET_CANOPY_HEIGHT,SF%VEG_LSET_SIGMA,SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS,SF%VEG_LSET_CROWN_VEG, &
+           SF%VEG_LSET_WAF_UNSHELTERED,SF%VEG_LSET_WAF_SHELTERED)
       ENDIF
 
 !--- Cruz et al. crown fire head fire ROS model
