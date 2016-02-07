@@ -1918,7 +1918,8 @@ IF (LIMITER_LS > 3) LIMITER_LS = 1
 DT_OUTPUT  = 0.5_EB
 IF (DT_SLCF > 0._EB) DT_OUTPUT = DT_SLCF
 
-TIME_LS    = 0._EB
+!TIME_LS    = 0._EB
+TIME_LS    = T_BEGIN
 
 !--Level set field for animation via Smokeview
 LU_SLCF_LS = GET_FILE_NUMBER()
@@ -1979,7 +1980,7 @@ WRITE(LU_SLCF_ROS_LS) SMOKEVIEW_LABEL(1:30)
 WRITE(LU_SLCF_ROS_LS) UNITS(1:30)
 WRITE(LU_SLCF_ROS_LS)1,NX_LS,1,NY_LS,1,1
 
-!--Fire line intenstiey ASCII format
+!--Fire line intensity ASCII format
 LU_FLI_LS = GET_FILE_NUMBER()
 OPEN(LU_FLI_LS,FILE='fli_LS.txt',STATUS='REPLACE')
 WRITE(LU_FLI_LS,'(I5)') NX_LS,NY_LS
@@ -2390,12 +2391,11 @@ IF (ZWFDS > 6.1_EB .AND. .NOT. UNIFORM_UV) THEN
    U6PH  = WAF_6M*U(I,J,K)
    V6PH  = WAF_6M*V(I,J,K)
 ENDIF
-!! IF (ZC(KBAR) < Z6PH) KWIND=KBAR  !!!!!!******************WHERE SHOULD THIS GO??????????????
 !
-!!Obtain mid-flmame wind adjustment factor
-!!Log profile based wind adjustiment for unsheltered or sheltered condtions are from 
-!!Andrews 2012, USDA FS Gen Tech Rep. RMRS-GTR-266 (with added SI conversion)
-!!When using Andrews log formula for sheltered wind the crown fill portion, f, is 0.2
+!Obtain mid-flame wind adjustment factor
+!Log profile based wind adjustiment for unsheltered or sheltered condtions are from 
+!Andrews 2012, USDA FS Gen Tech Rep. RMRS-GTR-266 (with added SI conversion)
+!When using Andrews log formula for sheltered wind the crown fill portion, f, is 0.2
 IF (.NOT. CROWN_VEG) THEN
   WAF_MID = WAF_UNSHELTERED !WAF is from input file
   IF (WAF_UNSHELTERED == -99.0_EB) &
@@ -2415,9 +2415,6 @@ ENDIF
 !!Factor 60 converts U from m/s to m/min which is used in the Rothermel model.  
 UMF_X(I,J) = WAF_MID * U6PH * 60.0_EB
 UMF_Y(I,J) = WAF_MID * V6PH * 60.0_EB
-!UMF_TMP = 1.83_EB / LOG((20.0_EB + 1.18_EB * SURF_VEG_HT) /(0.43_EB * SURF_VEG_HT))
-!UMF_X(I,J) = UMF_TMP * U_LS(I,J) * 60.0_EB
-!UMF_Y(I,J) = UMF_TMP * V_LS(I,J) * 60.0_EB
   
 !Variables used in Phi_W formulas below (Rothermel model)
 B_ROTH = 0.15988_EB * (VEG_SIGMA**0.54_EB)
@@ -2570,20 +2567,7 @@ REAL(EB) :: CAC,CROSA,CROSP,CRLOAD,MPM_TO_MPS,MPS_TO_KPH,EXPG,G,FCTR1,FCTR2,GMAX
 
 MPM_TO_MPS = 1._EB/60._EB
 MPS_TO_KPH = 3600._EB/1000._EB
-!Z10PH      = 10._EB + CANOPY_HEIGHT
-!FCTR1      = 0.64_EB*CANOPY_HEIGHT !constant in logrithmic wind profile Albini & Baughman INT-221 1979
-!FCTR2      = 1.0_EB/(0.13_EB*CANOPY_HEIGHT) !constant in log wind profile
 
-!Find first k array index corresponding to ZC > 10 m + CANOPY_HEIGHT.
-!KWIND = 0
-!KDUM  = K
-!DO WHILE (ZC(KDUM)-ZC(K) <= Z10PH)
-!  KWIND = KDUM
-!  KDUM  = KDUM + 1
-!ENDDO
-!!KWIND = KWIND + 1
-!IF (ZC(KBAR) < Z10PH) KWIND=KBAR
-!
 VEG_HT = CANOPY_HEIGHT
 FCTR1 = 0.64_EB*VEG_HT !constant in logrithmic wind profile Albini & Baughman INT-221 1979 or 
 !                       !Andrews RMRS-GTR-266 2012 (p. 8, Eq. 4)
@@ -2639,13 +2623,6 @@ ENDIF
 
 UMAG = SQRT(U10PH**2 + V10PH**2)*MPS_TO_KPH !wind magnitude at 10 m above canopy, km/hr
 
-!UMAG = SQRT(U(I,J,KWIND)**2 + V(I,J,KWIND)**2)*MPS_TO_KPH !km/hr
-!WAF_LOG = LOG((Z10PH-FCTR1)*FCTR2)/LOG((ZC(KWIND)-ZC(K)-FCTR1)*FCTR2) !wind adjustment factor from log wind profile
-!IF (VEG_LEVEL_SET_UNCOUPLED) WAF_LOG = 1.0_EB 
-!UMAG = WAF_LOG*UMAG !wind magnitude at 10 m above canopy
-!if(i==31 .and. j==25)print 2000,kwind,canopy_height,z10ph,zc(kwind),waf_log,umag/mps_to_kph
-!2000 format('vege:kwind,canopy height,z10ph,zc,waf,umag ',I3,2x,5(e15.5))
-
 !Theta_elps, after adjustment below, is angle of direction (0 to 2pi) of highest spread rate
 !0<=theta_elps<=2pi as measured clockwise from Y-axis. ATAN2(y,x) is the angle, measured in the
 !counterclockwise direction, between the positive x-axis and the line through (0,0) and (x,y)
@@ -2653,7 +2630,6 @@ UMAG = SQRT(U10PH**2 + V10PH**2)*MPS_TO_KPH !wind magnitude at 10 m above canopy
 
 !Note, unlike the Rothermel ROS case, the slope is assumed to be zero at this point.
 THETA_ELPS(I,J) = ATAN2(V10PH,U10PH)
-!THETA_ELPS(I,J) = ATAN2(V(I,J,KWIND),U(I,J,KWIND))
         
 !The following two lines convert ATAN2 output to compass system (0 to 2 pi CW from +Y-axis)
 THETA_ELPS(I,J) = PIO2 - THETA_ELPS(I,J)
