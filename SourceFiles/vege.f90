@@ -2366,11 +2366,12 @@ ENDIF
 !---U,V at 6.1 above the veg height computed from the WAF when vegetation height + 6.1 m is above or 
 !   equal to the first u,v location on grid
 !print*,'zwfds,z6ph,uniform_uv',zwfds,z6ph,uniform_uv
+KWIND = 0
+KDUM = 0
 IF (ZWFDS <= 6.1_EB .AND. .NOT. UNIFORM_UV) THEN 
 !Find k array index for first grid cell that has ZC > 6.1 m 
    KWIND = 0
    KDUM  = K
-!print 1116,k,kwind,kdum,zc(k),u(i,j,k)
    DO WHILE (ZWFDS <= 6.1_EB) !this assumes the bottom computational boundary = top of veg
       KWIND = KDUM
       KDUM  = KDUM + 1
@@ -2389,13 +2390,7 @@ IF (ZWFDS > 6.1_EB .AND. .NOT. UNIFORM_UV) THEN
    U6PH  = WAF_6M*U(I,J,K)
    V6PH  = WAF_6M*V(I,J,K)
 ENDIF
-!!print*,'u,v',u(i,j,k),v(i,j,k)
-!!print*,'waf_log',waf_log
-!!print*,'u6ph,v6ph',u6ph,v6ph
-!
 !! IF (ZC(KBAR) < Z6PH) KWIND=KBAR  !!!!!!******************WHERE SHOULD THIS GO??????????????
-!!print 1116,k,kwind,kdum,zc(kwind),u(i,j,kwind)
-!1116 format('(vege,windslpcoeff)',1x,3(I3),2x,2(e15.5))
 !
 !!Obtain mid-flmame wind adjustment factor
 !!Log profile based wind adjustiment for unsheltered or sheltered condtions are from 
@@ -2411,9 +2406,12 @@ ELSE
   IF (WAF_SHELTERED == -99.0_EB)   &
       WAF_MID=0.555_EB/(SQRT(0.20_EB*3.28_EB*VEG_HT)*LOG((20.0_EB + 1.18_EB*VEG_HT)/(0.43_EB*VEG_HT)))
 ENDIF
+
+!if (i==41 .and. j==41) then
+!print 1116,k,kwind,zwfds,zc(kwind),u(i,j,k),u(i,j,kwind),waf_6m,waf_mid
+!endif
+!1116 format('(vege,rothwind)',1x,2(I3),1x,6(e15.5))
 !
-!!print*,'waf_mid',waf_mid
-!!print*,'-------------------------------------------------------'
 !!Factor 60 converts U from m/s to m/min which is used in the Rothermel model.  
 UMF_X(I,J) = WAF_MID * U6PH * 60.0_EB
 UMF_Y(I,J) = WAF_MID * V6PH * 60.0_EB
@@ -2489,6 +2487,12 @@ THETA_ELPS(I,J) = PIO2 - THETA_ELPS(I,J)
 IF (THETA_ELPS(I,J) < 0.0_EB) THETA_ELPS(I,J) = 2.0_EB*PI + THETA_ELPS(I,J)
 
 ROS_HEAD(I,J) = ZEROWINDSLOPE_ROS*(1.0_EB + PHI_WS(I,J)) !used in LS vs FS paper
+
+!if (i==41 .and. j==41) then
+!print 1117,ros_head(i,j)
+!print*,'-------------------------'
+!endif
+!1117 format('(vege,rothROS)',1x,1(e15.5))
 
 END SUBROUTINE ROTH_WINDANDSLOPE_COEFF_HEADROS
 !
@@ -2603,11 +2607,12 @@ ENDIF
 !---U,V at 10 m above the veg height computed from the WAF when vegetation height + 10 m is above or 
 !   equal to the first u,v location on grid
 !print*,'zwfds,z6ph,uniform_uv',zwfds,z6ph,uniform_uv
+KWIND = 0
+KDUM  = 0
 IF (ZWFDS <= 10.0_EB .AND. .NOT. UNIFORM_UV) THEN 
 !Find k array index for first grid cell that has ZC > 10 m 
    KWIND = 0
    KDUM  = K
-!print 1116,k,kwind,kdum,zc(k),u(i,j,k)
    DO WHILE (ZWFDS <= 10.0_EB) !this assumes the bottom computational boundary = top of veg
       KWIND = KDUM
       KDUM  = KDUM + 1
@@ -2626,6 +2631,11 @@ IF (ZWFDS > 10.0_EB .AND. .NOT. UNIFORM_UV) THEN
    U10PH  = WAF_10M*U(I,J,K)
    V10PH  = WAF_10M*V(I,J,K)
 ENDIF
+
+!if (i==41 .and. j==41) then
+!print 1116,k,kwind,zwfds,zc(kwind),u(i,j,k),u(i,j,kwind),waf_10m
+!endif
+!1116 format('(vege,cruzwind)',1x,2(I3),1x,5(e15.5))
 
 UMAG = SQRT(U10PH**2 + V10PH**2)*MPS_TO_KPH !wind magnitude at 10 m above canopy, km/hr
 
@@ -2691,6 +2701,12 @@ PROB_MIN_MAX_METHOD: IF (PROB_CROWN > 1._EB)  THEN !use
     CFB_LS(I,J) = CRLOAD*MAX(1.0_EB, (PROB - PROB_PASSIVE)/(PROB_ACTIVE - PROB_PASSIVE))
   ENDIF
 ENDIF PROB_MIN_MAX_METHOD
+
+!if (i==41 .and. j==41) then
+!print 1117,prob,ros_head(i,j)
+!print*,'========================='
+!endif
+!1117 format('(vege,cruzROS)',1x,2(e15.5))
 
 !Store crown fire probability values
 CRUZ_CROWN_PROB(I,J) = PROB 
