@@ -1918,7 +1918,6 @@ IF (LIMITER_LS > 3) LIMITER_LS = 1
 DT_OUTPUT  = 0.5_EB
 IF (DT_SLCF > 0._EB) DT_OUTPUT = DT_SLCF
 
-!TIME_LS    = 0._EB
 TIME_LS    = T_BEGIN
 
 !--Level set field for animation via Smokeview
