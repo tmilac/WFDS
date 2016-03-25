@@ -18,7 +18,7 @@ IMPLICIT NONE
 PRIVATE
 CHARACTER(255), PARAMETER :: readid='$Id: read.f90 9977 2012-02-03 19:52:00Z mcgratta $'
 CHARACTER(255), PARAMETER :: readrev='$Revision: 9977 $'
-CHARACTER(255), PARAMETER :: readdate='$Date: 2012-02-03 11:52:00 -0800 (March, 18 Feb 2012) $'
+CHARACTER(255), PARAMETER :: readdate='$Date: 2012-02-03 11:52:00 -0800 (Feb 2012) $'
 
 PUBLIC READ_DATA, GET_REV_read
 
@@ -71,8 +71,8 @@ IF (FN_INPUT(1:1)==' ') THEN
       WRITE(LU_ERR,'(A,I3)') 'Number of available OpenMP threads: ',OPENMP_AVAILABLE_THREADS
    IF (MYID==0) THEN
       WRITE(LU_ERR,'(A,I4)') "SVN Revision Number: ",SVN_REVISION_NUMBER
-      WRITE(LU_ERR,'(A,A)') "Compile Date: ",TRIM(COMPILE_DATE)
-      WRITE(LU_ERR,'(/A)')  "WFDS, February 27, 2016; based on subversion 9977 of FDS"
+!     WRITE(LU_ERR,'(A,A)') "Compile Date: ",TRIM(COMPILE_DATE)
+      WRITE(LU_ERR,'(/A)')  "WFDS, March 24, 2016; based on subversion 9977 of FDS"
       WRITE(LU_ERR,'(/A)')  "Consult FDS Users Guide Chapter, Running FDS, for further instructions."
       WRITE(LU_ERR,'(/A)')  "Consult https://sites.google.com/site/wuifiresfiremodels, for WFDS information."
       WRITE(LU_ERR,'(/A)')  "Hit Enter to Escape..."
