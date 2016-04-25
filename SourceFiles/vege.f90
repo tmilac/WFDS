@@ -23,7 +23,7 @@ CHARACTER(255), PARAMETER :: vegedate='$Date: 2011-12-30 09:49:06 -0800 (Fri, 30
 LOGICAL, ALLOCATABLE, DIMENSION(:,:,:) :: VEG_PRESENT_FLAG,CELL_TAKEN_FLAG
 INTEGER, ALLOCATABLE, DIMENSION(:,:,:) :: IJK_VEGOUT
 INTEGER :: IZERO,NLP_VEG_FUEL,NCONE_TREE,NXB,NYB
-REAL(EB) :: RCELL,R_TREE,XCELL,XI,YJ,YCELL,ZCELL,ZK
+REAL(EB) :: RCELL,R_TREE,XCELL,XI,YJ,YCELL,ZCELL,ZK,TREEXS,TREEXF,TREEYS,TREEYF,TREEZS,TREEZF
 !For Level Set
 INTEGER  :: LIMITER_LS,LU_CRWN_PROB_LS,LU_FLI_LS,LU_ROSX_LS,LU_ROSY_LS,LU_SLCF_LS,LU_SLCF_FLI_LS, &
             LU_SLCF_PROBC_LS,LU_SLCF_ROS_LS,LU_SLCF_TOA_LS,LU_TOA_LS,NX_LS,NY_LS
@@ -245,58 +245,118 @@ TREE_LOOP: DO NCT=1,N_TREES
 ! Build a rectangular volume containing vegetation
 !
    IF_RECTANGULAR_VEGETATION:IF (VEG_FUEL_GEOM(NCT) == 'RECTANGLE')THEN
-       RECTANGLE_TREE_PRESENT = .TRUE.
-       N_RECT_TREE            = TREE_RECT_INDEX(NCT)
-       NLP_RECT_VEG           = 0
-       DO NZB=0,KBAR-1
-        ZLOC = Z(NZB) + 0.5_EB*DZ(NZB)
-        IF (ZLOC>=ZS_RECT_VEG(N_RECT_TREE) .AND. ZLOC<=ZF_RECT_VEG(N_RECT_TREE)) THEN
-         DO NXB = 0,IBAR-1
-          XLOC = X(NXB) + 0.5_EB*DX(NXB)
-          IF (XLOC >= XS_RECT_VEG(N_RECT_TREE) .AND. XLOC <= XF_RECT_VEG(N_RECT_TREE)) THEN
-           DO NYB = 0,JBAR-1
-            YLOC = Y(NYB) + 0.5_EB*DY(NYB)
-            IF (YLOC >= YS_RECT_VEG(N_RECT_TREE) .AND. YLOC <= YF_RECT_VEG(N_RECT_TREE)) THEN
-             NLP  = NLP + 1
-             NLP_RECT_VEG = NLP_RECT_VEG + 1
-             IF (NLP>NLPDIM) THEN
-              CALL RE_ALLOCATE_PARTICLES(1,NM,0,1000)
-              PARTICLE=>MESHES(NM)%PARTICLE
-             ENDIF
-             LP=>PARTICLE(NLP)
-             LP%TAG = PARTICLE_TAG
-             LP%X = REAL(NXB,EB)
-             LP%Y = REAL(NYB,EB)
-             LP%Z = REAL(NZB,EB)
-             LP%CLASS = IPC
-             LP%PWT   = 1._EB  ! This is not used, but it is necessary to assign a non-zero weight factor to each particle
-             VEG_PRESENT_FLAG(NXB,NYB,NZB) = .TRUE.
-             X_EXTENT = XF_RECT_VEG(N_RECT_TREE) - XS_RECT_VEG(N_RECT_TREE)
-             Y_EXTENT = YF_RECT_VEG(N_RECT_TREE) - YS_RECT_VEG(N_RECT_TREE)
-             Z_EXTENT = ZF_RECT_VEG(N_RECT_TREE) - ZS_RECT_VEG(N_RECT_TREE)
-             IF(X_EXTENT <= 0.0_EB .OR. Y_EXTENT <= 0.0_EB .OR. Z_EXTENT <= 0.0_EB) THEN
-               PRINT*,'ERROR RECTANGULAR TREE: for (maybe) tree number ', NCT
-               PRINT*,'ZERO OR NEGATIVE TREE WIDTH IN ONE OR MORE DIRECTIONS'
-               PRINT*,'X LENGTH = ',X_EXTENT
-               PRINT*,'Y LENGTH = ',Y_EXTENT
-               PRINT*,'Z LENGTH = ',Z_EXTENT
-               STOP
-             ENDIF
-             LP%VEG_VOLFRACTION = 1._EB
-!            IF (X_EXTENT < DX(NXB)) LP%VEG_VOLFRACTION = LP%VEG_VOLFRACTION*X_EXTENT/DX(NXB)
-!            IF (Y_EXTENT < DY(NYB)) LP%VEG_VOLFRACTION = LP%VEG_VOLFRACTION*Y_EXTENT/DY(NYB)
-             IF (Z_EXTENT < DZ(NZB)) LP%VEG_VOLFRACTION = LP%VEG_VOLFRACTION*Z_EXTENT/DZ(NZB)
-!            print*,'veg_volfraction',z_extent,dz(nzb),LP%veg_volfraction
-!            print*,'veg_volfraction',xs_rect_veg(nct),xf_rect_veg(nct),ys_rect_veg(nct),yf_rect_veg(nct), &
-!                                     zs_rect_veg(nct),zf_rect_veg(nct),z_extent,dz(nzb),LP%VEG_VOLFRACTION
-            ENDIF
-           ENDDO   
+     RECTANGLE_TREE_PRESENT = .TRUE.
+     N_RECT_TREE            = TREE_RECT_INDEX(NCT)
+     NLP_RECT_VEG           = 0
+     TREEXS = XS_RECT_VEG(N_RECT_TREE) ; TREEXF = XF_RECT_VEG(N_RECT_TREE) 
+     TREEYS = YS_RECT_VEG(N_RECT_TREE) ; TREEYF = YF_RECT_VEG(N_RECT_TREE) 
+     TREEZS = ZS_RECT_VEG(N_RECT_TREE) ; TREEZF = ZF_RECT_VEG(N_RECT_TREE) 
+     X_EXTENT = TREEXF - TREEXS
+     Y_EXTENT = TREEYF - TREEYS
+     Z_EXTENT = TREEZF - TREEZS
+     IF(X_EXTENT <= 0.0_EB .OR. Y_EXTENT <= 0.0_EB .OR. Z_EXTENT <= 0.0_EB) THEN
+     PRINT*,'ERROR RECTANGULAR TREE: for (maybe) tree number ', NCT
+     PRINT*,'ZERO OR NEGATIVE TREE WIDTH IN ONE OR MORE DIRECTIONS'
+     PRINT*,'X LENGTH = ',X_EXTENT
+     PRINT*,'Y LENGTH = ',Y_EXTENT
+     PRINT*,'Z LENGTH = ',Z_EXTENT
+     STOP
+     ENDIF
+!print 1113,treexs,treexf,treeys,treeyf,treezs,treezf
+!1113 format('vege',2x,6(E12.4))
+
+     DO NZB=0,KBAR-1
+! -- Check if veg is present in cell NXB,NYB,NZB (it may occupy only a portion of the cell)
+      IF (Z(NZB+1) > TREEZS .AND. TREEZF > Z(NZB)) THEN
+        DO NYB = 0,JBAR-1
+          IF (Y(NYB+1) > TREEYS .AND. TREEYF > Y(NYB)) THEN
+            DO NXB = 0,IBAR-1
+              IF (X(NXB+1) > TREEXS .AND. TREEXF > X(NXB)) THEN
+                NLP  = NLP + 1
+                NLP_RECT_VEG = NLP_RECT_VEG + 1
+                IF (NLP>NLPDIM) THEN
+                  CALL RE_ALLOCATE_PARTICLES(1,NM,0,1000)
+                  PARTICLE=>MESHES(NM)%PARTICLE
+                ENDIF
+                LP=>PARTICLE(NLP)
+                LP%VEG_VOLFRACTION = 1._EB
+                LP%TAG = PARTICLE_TAG
+                LP%X = REAL(NXB,EB)
+                LP%Y = REAL(NYB,EB)
+                LP%Z = REAL(NZB,EB)
+                LP%CLASS = IPC
+                LP%PWT   = 1._EB  ! This is not used, but it is necessary to assign a non-zero weight factor to each particle
+                VEG_PRESENT_FLAG(NXB,NYB,NZB) = .TRUE.
+! -- Determine volume fraction occupied by vegetation in cell
+                IF (TREEZS <= Z(NZB).AND. TREEZF < Z(NZB+1)) &
+                   LP%VEG_VOLFRACTION = LP%VEG_VOLFRACTION - (Z(NZB+1)-TREEZF)/DZ(NZB)
+                IF (TREEZS >  Z(NZB)) THEN
+                  LP%VEG_VOLFRACTION = LP%VEG_VOLFRACTION - (TREEZS-Z(NZB))/DZ(NZB)
+                  IF (TREEZF < Z(NZB+1)) LP%VEG_VOLFRACTION = LP%VEG_VOLFRACTION - (Z(NZB+1)-TREEZS)/DZ(NZB)
+                ENDIF
+!print*,'vege: volf=',lp%veg_volfraction
+              ENDIF
+            ENDDO
           ENDIF
-         ENDDO 
-        ENDIF
-       ENDDO
-       NLP_VEG_FUEL = NLP_RECT_VEG
+        ENDDO
+      ENDIF
+    ENDDO
+    NLP_VEG_FUEL = NLP_RECT_VEG
    ENDIF IF_RECTANGULAR_VEGETATION
+
+!   IF_RECTANGULAR_VEGETATION:IF (VEG_FUEL_GEOM(NCT) == 'RECTANGLE')THEN
+!       RECTANGLE_TREE_PRESENT = .TRUE.
+!       N_RECT_TREE            = TREE_RECT_INDEX(NCT)
+!       NLP_RECT_VEG           = 0
+!       DO NZB=0,KBAR-1
+!        ZLOC = Z(NZB) + 0.5_EB*DZ(NZB)
+!        IF (ZLOC>=ZS_RECT_VEG(N_RECT_TREE) .AND. ZLOC<=ZF_RECT_VEG(N_RECT_TREE)) THEN
+!         DO NXB = 0,IBAR-1
+!          XLOC = X(NXB) + 0.5_EB*DX(NXB)
+!          IF (XLOC >= XS_RECT_VEG(N_RECT_TREE) .AND. XLOC <= XF_RECT_VEG(N_RECT_TREE)) THEN
+!           DO NYB = 0,JBAR-1
+!            YLOC = Y(NYB) + 0.5_EB*DY(NYB)
+!            IF (YLOC >= YS_RECT_VEG(N_RECT_TREE) .AND. YLOC <= YF_RECT_VEG(N_RECT_TREE)) THEN
+!             NLP  = NLP + 1
+!             NLP_RECT_VEG = NLP_RECT_VEG + 1
+!             IF (NLP>NLPDIM) THEN
+!              CALL RE_ALLOCATE_PARTICLES(1,NM,0,1000)
+!              PARTICLE=>MESHES(NM)%PARTICLE
+!             ENDIF
+!             LP=>PARTICLE(NLP)
+!             LP%TAG = PARTICLE_TAG
+!             LP%X = REAL(NXB,EB)
+!             LP%Y = REAL(NYB,EB)
+!             LP%Z = REAL(NZB,EB)
+!             LP%CLASS = IPC
+!             LP%PWT   = 1._EB  ! This is not used, but it is necessary to assign a non-zero weight factor to each particle
+!             VEG_PRESENT_FLAG(NXB,NYB,NZB) = .TRUE.
+!             X_EXTENT = XF_RECT_VEG(N_RECT_TREE) - XS_RECT_VEG(N_RECT_TREE)
+!             Y_EXTENT = YF_RECT_VEG(N_RECT_TREE) - YS_RECT_VEG(N_RECT_TREE)
+!             Z_EXTENT = ZF_RECT_VEG(N_RECT_TREE) - ZS_RECT_VEG(N_RECT_TREE)
+!             IF(X_EXTENT <= 0.0_EB .OR. Y_EXTENT <= 0.0_EB .OR. Z_EXTENT <= 0.0_EB) THEN
+!               PRINT*,'ERROR RECTANGULAR TREE: for (maybe) tree number ', NCT
+!               PRINT*,'ZERO OR NEGATIVE TREE WIDTH IN ONE OR MORE DIRECTIONS'
+!               PRINT*,'X LENGTH = ',X_EXTENT
+!               PRINT*,'Y LENGTH = ',Y_EXTENT
+!               PRINT*,'Z LENGTH = ',Z_EXTENT
+!               STOP
+!             ENDIF
+!             LP%VEG_VOLFRACTION = 1._EB
+!!            IF (X_EXTENT < DX(NXB)) LP%VEG_VOLFRACTION = LP%VEG_VOLFRACTION*X_EXTENT/DX(NXB)
+!!            IF (Y_EXTENT < DY(NYB)) LP%VEG_VOLFRACTION = LP%VEG_VOLFRACTION*Y_EXTENT/DY(NYB)
+!             IF (Z_EXTENT < DZ(NZB)) LP%VEG_VOLFRACTION = LP%VEG_VOLFRACTION*Z_EXTENT/DZ(NZB)
+!!            print*,'veg_volfraction',z_extent,dz(nzb),LP%veg_volfraction
+!!            print*,'veg_volfraction',xs_rect_veg(nct),xf_rect_veg(nct),ys_rect_veg(nct),yf_rect_veg(nct), &
+!!                                     zs_rect_veg(nct),zf_rect_veg(nct),z_extent,dz(nzb),LP%VEG_VOLFRACTION
+!            ENDIF
+!           ENDDO   
+!          ENDIF
+!         ENDDO 
+!        ENDIF
+!       ENDDO
+!       NLP_VEG_FUEL = NLP_RECT_VEG
+!   ENDIF IF_RECTANGULAR_VEGETATION
 !
 ! Build a ring volume of vegetation fuel
 !
@@ -548,7 +608,7 @@ INTEGER, INTENT(IN) :: NM
 LOGICAL :: VEG_DEGRADATION_LINEAR,VEG_DEGRADATION_ARRHENIUS
 INTEGER :: IDT,NDT_CYCLES
 REAL(EB) :: FCTR_DT_CYCLES,FCTR_RDT_CYCLES,Q_VEG_CHAR_TOTAL,MPV_CHAR_CO2_TOTAL,MPV_CHAR_LOSS_TOTAL, &
-            MPV_MOIST_LOSS_TOTAL,MPV_VOLIT_TOTAL
+            MPV_MOIST_LOSS_TOTAL,MPV_VOLIT_TOTAL,VEG_VF
 REAL(EB) :: VEG_CRITICAL_MASSFLUX,VEG_CRITICAL_MASSSOURCE
 REAL(EB) :: CM,CN
 
@@ -689,6 +749,7 @@ PARTICLE_LOOP: DO I=1,NLP
  Q_VEG_CHAR_TOTAL = 0.0_EB !needed for time subcyling
 
 ! Vegetation variables
+ VEG_VF             = LP%VEG_VOLFRACTION !volume fraction of vegetation in cell
  NU_CHAR_VEG        = PC%VEG_CHAR_FRACTION
  NU_ASH_VEG         = PC%VEG_ASH_FRACTION/PC%VEG_CHAR_FRACTION !fraction of char that can become ash
  CHAR_FCTR          = 1._EB - PC%VEG_CHAR_FRACTION !factor used to determine volatile mass
@@ -699,9 +760,9 @@ PARTICLE_LOOP: DO I=1,NLP
  MPV_CHAR           = LP%VEG_CHAR_MASS !bulk density of char
  MPV_ASH            = LP%VEG_ASH_MASS  !bulk density of ash 
  MPV_MOIST          = LP%VEG_MOIST_MASS !bulk density of moisture in veg
- MPV_VEG_MIN        = PC%VEG_FUEL_MPV_MIN
- MPV_CHAR_MIN       = PC%VEG_CHAR_MPV_MIN
- MPV_MOIST_MIN      = PC%VEG_MOIST_MPV_MIN
+ MPV_VEG_MIN        = PC%VEG_FUEL_MPV_MIN + (1._EB - VEG_VF)*PC%VEG_BULK_DENSITY
+ MPV_CHAR_MIN       = MPV_VEG_MIN*PC%VEG_CHAR_FRACTION
+ MPV_MOIST_MIN      = PC%VEG_MOIST_MPV_MIN + (1._EB - VEG_VF)*PC%VEG_BULK_DENSITY*PC%VEG_MOISTURE
  MPV_ASH_MAX        = PC%VEG_ASH_MPV_MAX   !maxium ash bulk density
  MPV_MOIST_LOSS_MAX = PC%VEG_DEHYDRATION_RATE_MAX*DT*FCTR_DT_CYCLES
  MPV_VOLIT_MAX      = PC%VEG_BURNING_RATE_MAX*DT*FCTR_DT_CYCLES
@@ -836,7 +897,6 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
      IF_DEHYDRATION: IF (MPV_MOIST > MPV_MOIST_MIN .AND. TMP_VEG_NEW > TMP_H2O_BOIL) THEN
        Q_FOR_DRYING   = (TMP_VEG_NEW - TMP_H2O_BOIL)/DTMP_VEG * QNET_VEG
        MPV_MOIST_LOSS = MIN(DT*Q_FOR_DRYING/H_VAP_H2O,MPV_MOIST-MPV_MOIST_MIN)
-       MPV_MOIST_LOSS = LP%VEG_VOLFRACTION*MPV_MOIST_LOSS !accounts for veg not filling grid cell in z
        MPV_MOIST_LOSS = MIN(MPV_MOIST_LOSS,MPV_MOIST_LOSS_MAX) !use specified max
        TMP_VEG_NEW       = TMP_H2O_BOIL
        LP%VEG_MOIST_MASS = MPV_MOIST - MPV_MOIST_LOSS !kg/m^3
@@ -857,7 +917,6 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
 !        MPV_VOLIT    = Q_VOLIT*R_H_PYR_VEG
          MPV_VOLIT    = CHAR_FCTR*Q_VOLIT*R_H_PYR_VEG
          MPV_VOLIT    = MAX(MPV_VOLIT,0._EB)
-         MPV_VOLIT    = LP%VEG_VOLFRACTION*MPV_VOLIT !accounts for veg not filling grid cell in z
          MPV_VOLIT    = MIN(MPV_VOLIT,MPV_VOLIT_MAX) !user specified max
 
          DMPV_VEG     = CHAR_FCTR2*MPV_VOLIT
@@ -1082,6 +1141,7 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
  !MW_TERM    = MW_VEG_MOIST_TERM + MW_VEG_VOLIT_TERM
  MW_AVERAGE = R0/RSUM(II,JJ,KK)/RHO_GAS*(MW_VEG_MOIST_TERM + MW_VEG_VOLIT_TERM)
  Q_ENTHALPY = Q_VEG_MOIST + Q_VEG_VOLIT - (1.0_EB - PC%VEG_CHAR_ENTHALPY_FRACTION)*Q_VEG_CHAR
+
  !D_LAGRANGIAN(II,JJ,KK) = D_LAGRANGIAN(II,JJ,KK)  +           & 
  !                         (-FCTR_RDT_CYCLES*QCON_VEG*RCP_GAS + Q_ENTHALPY*RCP_GAS)/(RHO_GAS*TMP_GAS) + &
  !                         RDT*MW_AVERAGE 
@@ -1162,8 +1222,8 @@ ENDDO TIME_SUBCYCLING_LOOP
  IF (N_TREE /= 0) THEN
   TREE_OUTPUT_DATA(N_TREE,1,NM) = TREE_OUTPUT_DATA(N_TREE,1,NM) + LP%TMP - 273._EB !C
   TREE_OUTPUT_DATA(N_TREE,2,NM) = TREE_OUTPUT_DATA(N_TREE,2,NM) + TMP_GAS - 273._EB !C
-  TREE_OUTPUT_DATA(N_TREE,3,NM) = TREE_OUTPUT_DATA(N_TREE,3,NM) + LP%VEG_FUEL_MASS*V_CELL !kg
-  TREE_OUTPUT_DATA(N_TREE,4,NM) = TREE_OUTPUT_DATA(N_TREE,4,NM) + LP%VEG_MOIST_MASS*V_CELL !kg
+  TREE_OUTPUT_DATA(N_TREE,3,NM) = TREE_OUTPUT_DATA(N_TREE,3,NM) + LP%VEG_FUEL_MASS*V_CELL*VEG_VF !kg
+  TREE_OUTPUT_DATA(N_TREE,4,NM) = TREE_OUTPUT_DATA(N_TREE,4,NM) + LP%VEG_MOIST_MASS*V_CELL*VEG_VF !kg
   TREE_OUTPUT_DATA(N_TREE,5,NM) = TREE_OUTPUT_DATA(N_TREE,5,NM) + LP%VEG_CHAR_MASS*V_CELL !kg
   TREE_OUTPUT_DATA(N_TREE,6,NM) = TREE_OUTPUT_DATA(N_TREE,6,NM) + LP%VEG_ASH_MASS*V_CELL !kg
   TREE_OUTPUT_DATA(N_TREE,7,NM) = TREE_OUTPUT_DATA(N_TREE,7,NM) + LP%VEG_DIVQC*V_CELL*0.001_EB !kW

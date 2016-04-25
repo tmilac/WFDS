@@ -72,7 +72,7 @@ IF (FN_INPUT(1:1)==' ') THEN
    IF (MYID==0) THEN
       WRITE(LU_ERR,'(A,I4)') "SVN Revision Number: ",SVN_REVISION_NUMBER
 !     WRITE(LU_ERR,'(A,A)') "Compile Date: ",TRIM(COMPILE_DATE)
-      WRITE(LU_ERR,'(/A)')  "WFDS, March 24, 2016; based on subversion 9977 of FDS"
+      WRITE(LU_ERR,'(/A)')  "WFDS, April 22, 2016; based on subversion 9977 of FDS"
       WRITE(LU_ERR,'(/A)')  "Consult FDS Users Guide Chapter, Running FDS, for further instructions."
       WRITE(LU_ERR,'(/A)')  "Consult https://sites.google.com/site/wuifiresfiremodels, for WFDS information."
       WRITE(LU_ERR,'(/A)')  "Hit Enter to Escape..."
@@ -3442,7 +3442,7 @@ READ_PART_LOOP: DO N=1,N_PART
    PC%VEG_DEGRADATION          = VEG_DEGRADATION
    PC%VEG_CHAR_OXIDATION       = VEG_CHAR_OXIDATION
    PC%VEG_CHAR_ENTHALPY_FRACTION = VEG_CHAR_ENTHALPY_FRACTION
-   PC%VEG_CHAR_MPV_MIN         = VEG_CHAR_FRACTION*PC%VEG_FUEL_MPV_MIN
+!  PC%VEG_CHAR_MPV_MIN         = VEG_CHAR_FRACTION*PC%VEG_FUEL_MPV_MIN !determined in vege.f90
    PC%VEG_ASH_MPV_MAX          = VEG_ASH_FRACTION*VEG_BULK_DENSITY
    PC%VEG_H_H2O                = VEG_H_H2O*1000._EB !J/kg
    PC%VEG_A_H2O                = VEG_A_H2O 
