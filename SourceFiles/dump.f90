@@ -1696,44 +1696,59 @@ DO N=1,N_TREES
    ENDIF
 ENDDO
 
-! Write out level set slice files variable names (placeholder)
+! The following is done in vege.f90 subroutine INITIALIZE_LEVEL_SET_FIREFRONT
 
-IF (VEG_LEVEL_SET) THEN
+! Write to .smv file the level set slice file names and case information (placeholder)
+
+!Need to write out info only if mesh contains a level set computation
+!IF (VEG_LEVEL_SET) THEN
+!  DO N=1,NMESHES
 ! Level set phi field
-   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
-   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsfs.sf'
-   WRITE(LU_SMV,'(A)') 'phifield'
-   WRITE(LU_SMV,'(A)') 'phifield'
-   WRITE(LU_SMV,'(A)') '-'
+!   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',N,1 !terrain slice assumes one mesh and puts level set data on terrain
+!!  IF (NMESHES  > 1) WRITE(LU_SMV,'(A,A,I4.4,A,A)')TRIM(CHID),'_',N,'_','lsfs.sf'
+!!  IF (NMESHES == 1) WRITE(LU_SMV,'(A,A,A)')TRIM(CHID),'_','lsfs.sf'
+!   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_0001_'//'lsfs.sf'
+!   WRITE(LU_SMV,'(A)') 'phifield'
+!   WRITE(LU_SMV,'(A)') 'phifield'
+!   WRITE(LU_SMV,'(A)') '-'
 
 ! Level set fire front time of arrival 
-   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
-   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lstoa.sf'
-   WRITE(LU_SMV,'(A)') 'LS TOA'
-   WRITE(LU_SMV,'(A)') 'LS TOA'
-   WRITE(LU_SMV,'(A)') 's'
+!   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',N,1 !terrain slice assumes one mesh and puts level set data on terrain
+!!  IF (NMESHES  > 1) WRITE(LU_SMV,'(A,A,I4.4,A,A)')TRIM(CHID),'_',N,'_','lstoa.sf'
+!!  IF (NMESHES == 1) WRITE(LU_SMV,'(A,A,A)')TRIM(CHID),'_','lstoa.sf'
+!   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lstoa.sf'
+!   WRITE(LU_SMV,'(A)') 'LS TOA'
+!   WRITE(LU_SMV,'(A)') 'LS TOA'
+!   WRITE(LU_SMV,'(A)') 's'
 
 ! Level set fire line intensity field
-   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
-   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsfli.sf'
-   WRITE(LU_SMV,'(A)') 'LS FLI'
-   WRITE(LU_SMV,'(A)') 'LS FLI'
-   WRITE(LU_SMV,'(A)') 'kW/m^2'
+!   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',N,1 !terrain slice assumes one mesh and puts level set data on terrain
+!!  IF (NMESHES  > 1) WRITE(LU_SMV,'(A,A,I4.4,A,A)')TRIM(CHID),'_',N,'_','lsfli.sf'
+!!  IF (NMESHES == 1) WRITE(LU_SMV,'(A,A,A)')TRIM(CHID),'_','lsfli.sf'
+!   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsfli.sf'
+!   WRITE(LU_SMV,'(A)') 'LS FLI'
+!   WRITE(LU_SMV,'(A)') 'LS FLI'
+!   WRITE(LU_SMV,'(A)') 'kW/m^2'
 
 ! Level set spread rate magnitude field
-   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
-   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsros.sf'
-   WRITE(LU_SMV,'(A)') 'LS ROS'
-   WRITE(LU_SMV,'(A)') 'LS ROS'
-   WRITE(LU_SMV,'(A)') 'm/s'
+!   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',N,1 !terrain slice assumes one mesh and puts level set data on terrain
+!!  IF (NMESHES  > 1) WRITE(LU_SMV,'(A,A,I4.4,A,A)')TRIM(CHID),'_',N,'_','lsros.sf'
+!!  IF (NMESHES == 1) WRITE(LU_SMV,'(A,A,A)')TRIM(CHID),'_','lsros.sf'
+!   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsros.sf'
+!   WRITE(LU_SMV,'(A)') 'LS ROS'
+!   WRITE(LU_SMV,'(A)') 'LS ROS'
+!   WRITE(LU_SMV,'(A)') 'm/s'
 
 ! Level set Cruz & Alexander probability of crowning field
-   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',1,1 !terrain slice assumes one mesh and puts level set data on terrain
-   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsprobc.sf'
-   WRITE(LU_SMV,'(A)') 'LS PROBCROWN'
-   WRITE(LU_SMV,'(A)') 'LS PROBCROWN'
-   WRITE(LU_SMV,'(A)') '-'
-ENDIF 
+!   WRITE(LU_SMV,'(A,5X,2I3)') 'SLCT ',N,1 !terrain slice assumes one mesh and puts level set data on terrain
+!!  IF (NMESHES  > 1) WRITE(LU_SMV,'(A,A,I4.4,A,A)')TRIM(CHID),'_',N,'_','lsprobc.sf'
+!!  IF (NMESHES == 1) WRITE(LU_SMV,'(A,A,A)')TRIM(CHID),'_','lsprobc.sf'
+!   WRITE(LU_SMV,'(A)')TRIM(CHID)//'_lsprobc.sf'
+!   WRITE(LU_SMV,'(A)') 'LS PROBCROWN'
+!   WRITE(LU_SMV,'(A)') 'LS PROBCROWN'
+!   WRITE(LU_SMV,'(A)') '-'
+! ENDDO
+!ENDIF 
 
 ! Write out GEOMETRY info (experimental)
 
