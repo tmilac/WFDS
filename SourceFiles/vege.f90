@@ -2945,7 +2945,7 @@ REAL(EB), INTENT(IN) :: T_CFD
 INTEGER :: J_FLANK,I,II,IIG,IIO,IOR,IW,J,JJ,JJG,JJO,KK,KKG,KKO,NOM
 INTEGER :: IDUM,JDUM,KDUM,KGRID,KWIND
 !LOGICAL :: IGNITION = .FALSE.
-REAL(EB) :: ARO,BURNOUT_FCTR,BURNOUT_TIME,FLI,HEAD_WIDTH_FCTR,IGNITION_WIDTH_Y,ROS_FLANK1,R_BURNOUT_FCTR,TIME_LS_LAST, &
+REAL(EB) :: ARO,BURNOUT_FCTR,FIREBASE_TIME,FLI,HEAD_WIDTH_FCTR,IGNITION_WIDTH_Y,ROS_FLANK1,R_BURNOUT_FCTR,TIME_LS_LAST, &
             TOTAL_FUEL_LOAD,VERT_CANOPY_EXTENT,SURFACE_HEATFLUX
 REAL(EB) :: XI,YJ,ZK,RCP_GAS
 REAL(EB) :: PHI_CHECK,LSET_PHI_F,LSET_PHI_V
@@ -3128,18 +3128,17 @@ DO WHILE (TIME_LS < T_FINAL)
     ENDIF IF_ELLIPSE
 
 !--- Compute heat flux into atmosphere
-    BURNOUT_TIME = BURNOUT_FCTR*0.01_EB/SF%VEG_LSET_SIGMA
+    FIREBASE_TIME = BURNOUT_FCTR*0.01_EB/SF%VEG_LSET_SIGMA !0.01 converts SIGMA from cm (needed for FARSITE) to m
 
-    IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. BURN_TIME_LS(IIG,JJG) <= BURNOUT_TIME) THEN 
+    IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. BURN_TIME_LS(IIG,JJG) <= FIREBASE_TIME) THEN 
      TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
-     SURFACE_HEATFLUX   = -SF%VEG_LSET_HEAT_OF_COMBUSTION*(1.0_EB-SF%VEG_LSET_CHAR_FRACTION)*TOTAL_FUEL_LOAD*100._EB* &
-                  SF%VEG_LSET_SIGMA*R_BURNOUT_FCTR
-     WC%VEG_HEIGHT = SF%VEG_LSET_SURF_HEIGHT*(1._EB - BURN_TIME_LS(IIG,JJG)/BURNOUT_TIME)
+     SURFACE_HEATFLUX   = -SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD/FIREBASE_TIME
+     WC%VEG_HEIGHT = SF%VEG_LSET_SURF_HEIGHT*(1._EB - BURN_TIME_LS(IIG,JJG)/FIREBASE_TIME)
      BURN_TIME_LS(IIG,JJG) = BURN_TIME_LS(IIG,JJG) + DT_LS
      WC%LSET_FIRE = .TRUE.
     ENDIF
 
-    IF(BURN_TIME_LS(IIG,JJG) > BURNOUT_TIME) THEN
+    IF(BURN_TIME_LS(IIG,JJG) > FIREBASE_TIME) THEN
       SURFACE_HEATFLUX = 0.0_EB
       WC%VEG_HEIGHT=0.0_EB 
       WC%LSET_FIRE = .FALSE.
@@ -3150,7 +3149,7 @@ DO WHILE (TIME_LS < T_FINAL)
 !if (iig==25 .and. jjg==50)print 1000,phi_ls(iig,jjg),burn_time_ls(iig,jjg),burnout_time,ros_head(iig,jjg), &
 !                                     sr_x_ls(iig,jjg),sr_y_ls(iig,jjg),wc%veg_height,wc%qconf
 !1000 format(2x,7(f5.2),2x,1(f10.2))
-!   IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. BURN_TIME_LS(IIG,JJG) > BURNOUT_TIME) WC%VEG_HEIGHT=0.0_EB 
+!   IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. BURN_TIME_LS(IIG,JJG) > FIREBASE_TIME) WC%VEG_HEIGHT=0.0_EB 
 
 !---Drag constant can vary with height, if hveg > dzgrid
     VEG_DRAG(IIG,JJG,:) = 0.0_EB
@@ -3202,43 +3201,56 @@ DO WHILE (TIME_LS < T_FINAL)
  CALL LEVEL_SET_ADVECT_FLUX(NM)
  PHI_LS = PHI_LS - 0.5_EB*DT_LS*(FLUX0_LS + FLUX1_LS)
 
+! Account for heat released by thermal elements (if present). Thermal elements are inserted in part.f90
+IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
+  RCP_GAS    = 1._EB/0.001_EB !1/(J/kg/K)
+  PARTICLE_LOOP: DO I=1,NLP
+    LP=>PARTICLE(I)
+    IF(.NOT. LP%LSET_THERMAL_ELEMENT) CYCLE PARTICLE_LOOP
+    CALL GET_IJK(LP%X,LP%Y,LP%Z,NM,XI,YJ,ZK,II,JJ,KK)
+    LP%LSET_HRRPUV = 0.01_EB !W/m^3
+    D_LAGRANGIAN(II,JJ,KK) = D_LAGRANGIAN(II,JJ,KK)  + LP%LSET_HRRPUV*RCP_GAS/(RHO(II,JJ,KK)*TMP(II,JJ,KK))
+  ENDDO PARTICLE_LOOP
+  CALL REMOVE_PARTICLES(T_CFD,NM)
+ENDIF
+
 !print*,'min,max phi_ls',minval(phi_ls),maxval(phi_ls)
 
 !print*,'max flux0,flux1',maxval(abs(flux0_ls)),maxval(abs(flux1_ls))
 
 !Variable Time Step for simulations uncoupled from the CFD computation
 !IF (VEG_LEVEL_SET_UNCOUPLED) THEN
- IF (.NOT. VEG_LEVEL_SET) THEN
-
-   PHI_CHECK = MAXVAL(ABS(PHI_LS - PHI_TEMP_LS)) !Find max change in phi
- 
-   IF (LSET_IGNITION) THEN
-     ! If any phi values change by more than 0.5, or all change less
-     ! than 0.1 (both values are arbitrary), during one time step,
-     ! then adjust time step accordingly.
-     
-     IF (PHI_CHECK > 0.5_EB) THEN
-         ! Cut time step in half and cycle the do-while loop
-         DT_COEF = 0.5_EB * DT_COEF 
-!        DT_LS = DT_COEF * MIN(DX_LS,DY_LS)/DYN_SR_MAX
-         DT_LS = DT_COEF * MIN(DX(1),DY(1))/DYN_SR_MAX
-         DT_LS = MIN(DT_LS,100._EB)
-         PHI_LS = PHI_TEMP_LS ! Exchange for previous phi and cycle
-         print '(A,1x,E13.5,1x,A,i3)',"Halving time step, dt=  ",dt_ls,' mesh ',nm
-         CYCLE 
-     ENDIF
- 
-     ! Increase time step by 1/4 if changes are small
-     IF (PHI_CHECK < 0.1_EB) DT_COEF = DT_COEF * 1.25_EB
-     
-     ! Dynamic Spread Rate Max
-     DYN_SR_MAX = MAX(DYN_SR_MAX,0.01_EB) ! dyn_sr_max must be g.t. zero
-!    DT_LS = DT_COEF * MIN(DX_LS,DY_LS)/DYN_SR_MAX
-     DT_LS = DT_COEF * MIN(DX(1),DY(1))/DYN_SR_MAX
-     DT_LS = MIN(DT_LS,100._EB)
-     
-   ENDIF
- ENDIF
+! IF (.NOT. VEG_LEVEL_SET) THEN
+!
+!   PHI_CHECK = MAXVAL(ABS(PHI_LS - PHI_TEMP_LS)) !Find max change in phi
+! 
+!   IF (LSET_IGNITION) THEN
+!     ! If any phi values change by more than 0.5, or all change less
+!     ! than 0.1 (both values are arbitrary), during one time step,
+!     ! then adjust time step accordingly.
+!     
+!     IF (PHI_CHECK > 0.5_EB) THEN
+!         ! Cut time step in half and cycle the do-while loop
+!         DT_COEF = 0.5_EB * DT_COEF 
+!!        DT_LS = DT_COEF * MIN(DX_LS,DY_LS)/DYN_SR_MAX
+!         DT_LS = DT_COEF * MIN(DX(1),DY(1))/DYN_SR_MAX
+!         DT_LS = MIN(DT_LS,100._EB)
+!         PHI_LS = PHI_TEMP_LS ! Exchange for previous phi and cycle
+!         print '(A,1x,E13.5,1x,A,i3)',"Halving time step, dt=  ",dt_ls,' mesh ',nm
+!         CYCLE 
+!     ENDIF
+! 
+!     ! Increase time step by 1/4 if changes are small
+!     IF (PHI_CHECK < 0.1_EB) DT_COEF = DT_COEF * 1.25_EB
+!     
+!     ! Dynamic Spread Rate Max
+!     DYN_SR_MAX = MAX(DYN_SR_MAX,0.01_EB) ! dyn_sr_max must be g.t. zero
+!!    DT_LS = DT_COEF * MIN(DX_LS,DY_LS)/DYN_SR_MAX
+!     DT_LS = DT_COEF * MIN(DX(1),DY(1))/DYN_SR_MAX
+!     DT_LS = MIN(DT_LS,100._EB)
+!     
+!   ENDIF
+! ENDIF
  
 
  TIME_LS = TIME_LS + DT_LS
@@ -3287,19 +3299,6 @@ DO WHILE (TIME_LS < T_FINAL)
  ENDIF
 !
 ENDDO !While loop
-
-! Account for heat released by thermal elements (if present)
-IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
-  RCP_GAS    = 1._EB/0.001_EB
-  PARTICLE_LOOP: DO I=1,NLP
-    LP=>PARTICLE(I)
-    IF(.NOT. LP%LSET_THERMAL_ELEMENT) CYCLE PARTICLE_LOOP
-    CALL GET_IJK(LP%X,LP%Y,LP%Z,NM,XI,YJ,ZK,II,JJ,KK)
-    LP%LSET_HRRPUV = 0.01_EB !W/m^3
-    D_LAGRANGIAN(II,JJ,KK) = D_LAGRANGIAN(II,JJ,KK)  + LP%LSET_HRRPUV*RCP_GAS/(RHO(II,JJ,KK)*TMP(II,JJ,KK))
-  ENDDO PARTICLE_LOOP
-  CALL REMOVE_PARTICLES(T_CFD,NM)
-ENDIF
 
 !if (nm == 1) print*,'vegprop nm,lset_phi(ibp1,1)',nm,phi_ls(ibp1,1)
 !if (nm == 2) print*,'vegprop nm,lset_phi(0,1)',nm,phi_ls(0,1)
