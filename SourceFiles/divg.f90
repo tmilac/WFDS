@@ -126,7 +126,6 @@ IF (N_TRACKED_SPECIES > 0) THEN
       RHO_D = MU*RSC
    ENDIF
 ENDIF
-!print*,'Divg:compute_div_part_1: into species loop'
 
 SPECIES_LOOP: DO N=1,N_TRACKED_SPECIES
 
@@ -215,11 +214,7 @@ SPECIES_LOOP: DO N=1,N_TRACKED_SPECIES
             
             ! H_RHO_D_DZDZ
             TMP_G = .5_EB*(TMP(I,J,K+1)+TMP(I,J,K))               
-!print*,'divg:stop2'
-!print*,'divg:I,J,K+1,tmp',i,j,k+1,tmp(i,j,k+1)
-!print*,'divg:I,J,K,tmp',i,j,k,tmp(i,j,k)
             CALL GET_SENSIBLE_ENTHALPY_DIFF(N,TMP_G,HDIFF)
-!print*,'divg:stop3'
             H_RHO_D_DZDZ(I,J,K) = HDIFF*RHO_D_DZDZ(I,J,K)
          ENDDO
       ENDDO
@@ -634,6 +629,18 @@ ENDIF
 ! Add contribution of evaporating PARTICLEs
 
 IF (NLP>0 .AND. N_EVAP_INDICES > 0 .AND. .NOT.EVACUATION_ONLY(NM) .AND. .NOT.ENTHALPY_TRANSPORT) THEN
+   DO K=1,KBAR
+      DO J=1,JBAR
+         DO I=1,IBAR
+            DP(I,J,K) = DP(I,J,K) + D_LAGRANGIAN(I,J,K)
+         ENDDO
+      ENDDO
+   ENDDO
+ENDIF
+
+! Add contribution of thermal elements for Level Set fire front propagation
+
+IF (VEG_LEVEL_SET_COUPLED .AND. VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
    DO K=1,KBAR
       DO J=1,JBAR
          DO I=1,IBAR

@@ -473,7 +473,10 @@ WALL_INSERT_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
    INSERT_RATE = INSERT_RATE + WALL(IW)%NPPCW/SF%DT_INSERT
    INSERT_COUNT = INSERT_COUNT + WALL(IW)%NPPCW
    IF (WC%UW >= -0.0001_EB) CYCLE WALL_INSERT_LOOP
-   IF (WC%QCONF >= 0.0_EB)  CYCLE WALL_INSERT_LOOP !for Level Set, particles only at fire front
+
+! Program flow control for Level Set fire front propagation. Controls whether or not particles are inserted at the fire front.
+   IF (VEG_LEVEL_SET_SURFACE_HEATFLUX .AND. WC%QCONF >= 0.0_EB)  CYCLE WALL_INSERT_LOOP !for Level Set with convective flux BC
+   IF (VEG_LEVEL_SET_THERMAL_ELEMENTS .AND. .NOT. WC%LSET_FIRE)  CYCLE WALL_INSERT_LOOP !for Level Set with Thermal Elements
    
    II = WC%II
    JJ = WC%JJ
@@ -579,6 +582,8 @@ WALL_INSERT_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
          CALL PARTICLE_SIZE_WEIGHT(LP%R,LP%PWT)
          MASS_SUM = MASS_SUM + LP%PWT*PC%FTPR*LP%R**3
       ENDIF
+
+      IF (WC%LSET_FIRE .AND. VEG_LEVEL_SET_THERMAL_ELEMENTS) LP%LSET_THERMAL_ELEMENT = .TRUE.
 
    ENDDO PARTICLE_INSERT_LOOP2
 
@@ -818,6 +823,10 @@ CALL POINT_TO_MESH(NM)
 IF (N_EVAP_INDICES>0 .AND. .NOT.EVACUATION_ONLY(NM) .AND. CORRECTOR) THEN
    D_LAGRANGIAN = 0._EB
 ENDIF
+
+!Thermal elements for Level Set fire front propagation
+
+IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) D_LAGRANGIAN = 0._EB
 
 ! Move the PARTICLEs/particles, then compute mass and energy transfer, then add PARTICLE momentum to gas
 
