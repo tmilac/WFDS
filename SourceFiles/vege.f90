@@ -35,8 +35,6 @@ REAL(EB) :: B_ROTH,BETA_OP_ROTH,C_ROTH,E_ROTH
 
 !REAL(EB) :: NX_LS,NY_LX,PHI_MIN_LS,PHI_MAX_LS
 
-!Test of Level Set feature in SmartGit
- 
 CONTAINS
  
 
