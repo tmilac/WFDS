@@ -57,6 +57,7 @@ cSURF ID = 'GRASS'
             VEG_LSET_BETA    = 0.0012
             VEG_LSET_SIGMA   = 11400
             VEG_LSET_SURF_HEIGHT = 0.51
+            VEG_LSET_SURF_LOAD   = 0.313
             VEG_LSET_HEAT_OF_COMBUSTION = 18000.
             PART_ID = 'TE'
             VEL = -0.01
