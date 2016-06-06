@@ -587,13 +587,14 @@ WALL_INSERT_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
       IF (WC%LSET_FIRE .AND. VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
         LP%LSET_THERMAL_ELEMENT = .TRUE.
 !       LP%LSET_HRRPUV = 0.1_EB !W/m^3
-!print '(A)','part:stuff'
-!print '(A,E13.5)','surface_heatflux ',wc%veg_lset_surface_heatflux
-!print '(A,E13.5)','dt_insert',sf%dt_insert
-!print '(A,E13.5)','lifetime',pc%lifetime
-!print '(A,E13.5)','dz',dz(kk)
-        LP%LSET_HRRPUV = -WC%VEG_LSET_SURFACE_HEATFLUX*SF%DT_INSERT/(0.5*PC%LIFETIME*DZ(KK))
-!print '(A,E13.5)','hrrpuv',lp%lset_hrrpuv
+!print '(A)','----------------------------------part:stuff'
+!print '(A,ES12.4)','surface_heatflux ',wc%veg_lset_surface_heatflux
+!print '(A,ES12.4)','dt_insert',sf%dt_insert
+!print '(A,ES12.4)','lifetime',pc%lifetime
+!print '(A,ES12.4)','dz',dz(kk)
+        LP%LSET_HRRPUV = -WC%VEG_LSET_SURFACE_HEATFLUX*SF%DT_INSERT/(0.5*PC%LIFETIME*DZ(KK)*WC%NPPCW) !linear HRRPUV decay with time
+!       LP%LSET_HRRPUV = -WC%VEG_LSET_SURFACE_HEATFLUX*SF%DT_INSERT/(PC%LIFETIME*DZ(KK)*WC%NPPCW) !no HRRPUV decay with time
+!print '(A,ES12.4)','hrrpuv',lp%lset_hrrpuv
       ENDIF
 
    ENDDO PARTICLE_INSERT_LOOP2
