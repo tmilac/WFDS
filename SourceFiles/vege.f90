@@ -2943,8 +2943,9 @@ REAL(EB), INTENT(IN) :: T_CFD
 INTEGER :: J_FLANK,I,II,IIG,IIO,IOR,IPC,IW,J,JJ,JJG,JJO,KK,KKG,KKO,NOM
 INTEGER :: IDUM,JDUM,KDUM,KGRID,KWIND
 !LOGICAL :: IGNITION = .FALSE.
-REAL(EB) :: ARO,BURNOUT_FCTR,FIREBASE_TIME,FLI,HEAD_WIDTH_FCTR,IGNITION_WIDTH_Y,ROS_FLANK1,R_BURNOUT_FCTR, &
-            TE_TIME_FACTOR,TIME_LS_LAST,TOTAL_FUEL_LOAD,VERT_CANOPY_EXTENT
+REAL(EB) :: ARO,BURNTIME,BURNOUT_FCTR,BT,FIREBASE_TIME,FB_TIME_FCTR,FLI,HEAD_WIDTH_FCTR,GRIDCELL_FRACTION,GRIDCELL_TIME, &
+            IGNITION_WIDTH_Y,ROS_FLANK1,ROS_MAG,R_BURNOUT_FCTR,SHF,TE_TIME_FACTOR,TIME_LS_LAST,TOTAL_FUEL_LOAD, &
+            VERT_CANOPY_EXTENT
 REAL(EB) :: XI,YJ,ZK,RCP_GAS,TE_HRR_TOTAL
 REAL(EB) :: PHI_CHECK,LSET_PHI_F,LSET_PHI_V
 REAL(FB) :: TIME_LS_OUT
@@ -3125,14 +3126,35 @@ DO WHILE (TIME_LS < T_FINAL)
     ENDIF IF_ELLIPSE
 
 !--- Compute heat flux into atmosphere
+    GRIDCELL_TIME = 0.0_EB
     FIREBASE_TIME = BURNOUT_FCTR*0.01_EB/SF%VEG_LSET_SIGMA !0.01 converts SIGMA from cm (needed for FARSITE) to m
+    ROS_MAG = SQRT(SR_X_LS(IIG,JJG)**2 + SR_Y_LS(IIG,JJG)**2)
+    IF(ROS_MAG > 0.0_EB) THEN
+      GRIDCELL_TIME = DX(IIG)/ROS_MAG
+      GRIDCELL_FRACTION = MIN(1.0_EB,FIREBASE_TIME/GRIDCELL_TIME) !assumes spread direction parallel to grid axes
+    ENDIF
+    BURNTIME = MAX(FIREBASE_TIME,GRIDCELL_TIME) !assumes spread direction parallel to grid axes
 
-    IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. BURN_TIME_LS(IIG,JJG) <= FIREBASE_TIME) THEN 
-     TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
-     WC%VEG_LSET_SURFACE_HEATFLUX   = -SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD/FIREBASE_TIME
-     WC%VEG_HEIGHT = SF%VEG_LSET_SURF_HEIGHT*(1._EB - BURN_TIME_LS(IIG,JJG)/FIREBASE_TIME)
-     BURN_TIME_LS(IIG,JJG) = BURN_TIME_LS(IIG,JJG) + DT_LS
+    BT  = BURN_TIME_LS(IIG,JJG)
+    SHF = 0.0_EB !surface heat flux W/m^2
+    WC%LSET_FIRE = .FALSE.
+
+!Determine surface heat flux for fire spread through grid cell. Account for fires with a depth that is smaller
+!than the grid cell (GRIDCELL_FRACTION). Also account for partial presence of fire base as fire spreads into 
+!and out of the grid cell (FB_TIME_FCTR).
+    IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH) THEN 
      WC%LSET_FIRE = .TRUE.
+     TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
+     SHF = SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD/FIREBASE_TIME
+     SHF = SHF*GRIDCELL_FRACTION !needed when grid cell > firedepth
+     FB_TIME_FCTR = 1.0_EB
+     IF (0.0_EB        <= BT .AND. BT <= FIREBASE_TIME) FB_TIME_FCTR = BT/FIREBASE_TIME
+     IF (GRIDCELL_TIME <  BT .AND. BT <= GRIDCELL_TIME + FIREBASE_TIME) FB_TIME_FCTR = &
+       1.0_EB - (BT - GRIDCELL_TIME)/FIREBASE_TIME
+     IF (BT > GRIDCELL_TIME + FIREBASE_TIME) WC%LSET_FIRE = .FALSE.
+     WC%VEG_HEIGHT = SF%VEG_LSET_SURF_HEIGHT*(1._EB - BT)/FIREBASE_TIME
+     BURN_TIME_LS(IIG,JJG) = BURN_TIME_LS(IIG,JJG) + DT_LS
+     WC%VEG_LSET_SURFACE_HEATFLUX = -SHF*FB_TIME_FCTR
     ENDIF
 
 ! For mimicing a fixed burner using either thermal elements or surface heat flux
@@ -3142,11 +3164,20 @@ DO WHILE (TIME_LS < T_FINAL)
     ENDIF
      
 ! Stop burning if the fire front residence time is exceeded
-    IF(BURN_TIME_LS(IIG,JJG) > FIREBASE_TIME) THEN
+    IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. WC%LSET_FIRE) THEN
+!   IF(BURN_TIME_LS(IIG,JJG) > BURNTIME) THEN
       WC%VEG_LSET_SURFACE_HEATFLUX = 0.0_EB
       WC%VEG_HEIGHT = 0.0_EB 
-      WC%LSET_FIRE  = .FALSE.
+      BURN_TIME_LS(IIG,JJG) = 999999999._EB
+
     ENDIF
+
+!if(x(iig)==29 .and. y(jjg)==1) then 
+!    print '(A,2x,8ES12.4)','time,phi_ls,burn_time_ls,shf,Rx, Ry, cell frac, burntime =',t_cfd,phi_ls(iig,jjg), &
+!           burn_time_ls(iig,jjg),wc%veg_lset_surface_heatflux/gridcell_fraction, &
+!           sr_x_ls(iig,jjg),sr_y_ls(iig,jjg),gridcell_fraction,burntime
+!    print '(A,2x,ES12.4)','phi_ls(x+dx,y)',phi_ls(iig+1,jjg)
+!endif
 
     IF (VEG_LEVEL_SET_SURFACE_HEATFLUX) WC%QCONF = WC%VEG_LSET_SURFACE_HEATFLUX
     IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) SF%DT_INSERT = DT_LS
@@ -3194,7 +3225,7 @@ DO WHILE (TIME_LS < T_FINAL)
 
 !RK Stage 1
  RK2_PREDICTOR_LS = .TRUE.
- CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM)
+!CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM)
  CALL LEVEL_SET_ADVECT_FLUX(NM)
  PHI1_LS = PHI_LS - DT_LS*FLUX0_LS
 !print*,'max flux0',rk2_predictor_ls,maxval(abs(flux0_ls))
@@ -3205,6 +3236,10 @@ DO WHILE (TIME_LS < T_FINAL)
  CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM) 
  CALL LEVEL_SET_ADVECT_FLUX(NM)
  PHI_LS = PHI_LS - 0.5_EB*DT_LS*(FLUX0_LS + FLUX1_LS)
+
+!The following is done here instead of in Stage 1 RK so updated ROS can be used in coupled LS when
+!determining if fire residence time is shorter than a time step.
+ CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM)
 
 ! Account for heat released by thermal elements (if present). Thermal elements are inserted in part.f90
 IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
@@ -3225,7 +3260,7 @@ IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
                               TE_TIME_FACTOR*LP%LSET_HRRPUV*RCP_GAS/(RHO(II,JJ,KK)*TMP(II,JJ,KK))
   ENDDO PARTICLE_LOOP
   CALL REMOVE_PARTICLES(T_CFD,NM)
-print '(A,2x,1ES12.4)','TE_HRR_TOTAL (kW) = ',TE_HRR_TOTAL*0.001_EB
+!print '(A,2x,1ES12.4)','TE_HRR_TOTAL (kW) = ',TE_HRR_TOTAL*0.001_EB
 ENDIF
 
 !print*,'min,max phi_ls',minval(phi_ls),maxval(phi_ls)
