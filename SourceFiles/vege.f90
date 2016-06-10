@@ -3182,10 +3182,6 @@ DO WHILE (TIME_LS < T_FINAL)
     IF (VEG_LEVEL_SET_SURFACE_HEATFLUX) WC%QCONF = WC%VEG_LSET_SURFACE_HEATFLUX
     IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) SF%DT_INSERT = DT_LS
 
-!if (iig==25 .and. jjg==50)print 1000,phi_ls(iig,jjg),burn_time_ls(iig,jjg),burnout_time,ros_head(iig,jjg), &
-!                                     sr_x_ls(iig,jjg),sr_y_ls(iig,jjg),wc%veg_height,wc%qconf
-!1000 format(2x,7(f5.2),2x,1(f10.2))
-!   IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. BURN_TIME_LS(IIG,JJG) > FIREBASE_TIME) WC%VEG_HEIGHT=0.0_EB 
 
 !---Drag constant can vary with height, if hveg > dzgrid
     VEG_DRAG(IIG,JJG,:) = 0.0_EB
