@@ -3157,8 +3157,8 @@ DO WHILE (TIME_LS < T_FINAL)
      WC%VEG_LSET_SURFACE_HEATFLUX = -SHF*FB_TIME_FCTR
     ENDIF
 
-! For mimicing a fixed burner using either thermal elements or surface heat flux
-    IF (SF%HRRPUA > 0.0_EB) THEN
+! For mimicing a fixed burner using either thermal elements or surface heat flux after ignition time
+    IF (SF%HRRPUA > 0.0_EB .AND. PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH) THEN
      WC%VEG_LSET_SURFACE_HEATFLUX = -SF%HRRPUA
      WC%LSET_FIRE = .TRUE.
     ENDIF
@@ -3169,7 +3169,6 @@ DO WHILE (TIME_LS < T_FINAL)
       WC%VEG_LSET_SURFACE_HEATFLUX = 0.0_EB
       WC%VEG_HEIGHT = 0.0_EB 
       BURN_TIME_LS(IIG,JJG) = 999999999._EB
-
     ENDIF
 
 !if(x(iig)==29 .and. y(jjg)==1) then 
@@ -3248,15 +3247,17 @@ IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
     IF(.NOT. LP%LSET_THERMAL_ELEMENT) CYCLE PARTICLE_LOOP
     CALL GET_IJK(LP%X,LP%Y,LP%Z,NM,XI,YJ,ZK,II,JJ,KK)
 !   LP%LSET_HRRPUV = 0.01_EB !W/m^3 
-    TE_TIME_FACTOR = 1.0_EB - (T_FINAL-LP%T)/PC%LIFETIME !linear decay with time
+    TE_TIME_FACTOR = 1.0_EB - (T_FINAL-LP%T)/PC%TE_BURNTIME !linear decay with time
 !   TE_TIME_FACTOR = 1.0_EB !no decay with time
     TE_TIME_FACTOR = MAX(0.0_EB,TE_TIME_FACTOR)
+    IF(TE_TIME_FACTOR == 0.0_EB) PC%RGB = (/0,0,0/)
+    PC%RGB = (/0,0,0/)
     TE_HRR_TOTAL  = TE_HRR_TOTAL + TE_TIME_FACTOR*LP%LSET_HRRPUV*DX(II)*DY(JJ)*DZ(KK)
     D_LAGRANGIAN(II,JJ,KK) = D_LAGRANGIAN(II,JJ,KK)  +  &
                               TE_TIME_FACTOR*LP%LSET_HRRPUV*RCP_GAS/(RHO(II,JJ,KK)*TMP(II,JJ,KK))
   ENDDO PARTICLE_LOOP
-  CALL REMOVE_PARTICLES(T_CFD,NM)
-!print '(A,2x,1ES12.4)','TE_HRR_TOTAL (kW) = ',TE_HRR_TOTAL*0.001_EB
+!  CALL REMOVE_PARTICLES(T_CFD,NM)
+!print '(A,2x,I3,2x,2ES12.4)','Mesh, Time, TE_HRR_TOTAL (kW) = ',NM,T_CFD,TE_HRR_TOTAL*0.001_EB
 ENDIF
 
 !print*,'min,max phi_ls',minval(phi_ls),maxval(phi_ls)
