@@ -72,6 +72,7 @@ cSURF ID = 'GRASS'
 
 - Thermal Elements
 &PART ID='TE',
+            TE_BURNTIME=1.5
             AGE=1.5, 
             MASSLESS=.TRUE.,
             SAMPLING_FACTOR=1,

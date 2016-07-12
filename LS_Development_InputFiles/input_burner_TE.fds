@@ -58,6 +58,7 @@ cMESH IJK=28,25,25, XB=22,50,  0,25,0,25 /
 
 - Thermal Elements
 &PART ID='TE',
+            TE_BURNTIME = 1.5
             AGE=1.5, 
             MASSLESS=.TRUE.,
             SAMPLING_FACTOR=20,
