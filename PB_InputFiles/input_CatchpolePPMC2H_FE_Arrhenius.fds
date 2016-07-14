@@ -28,8 +28,8 @@ cPRES VELOCITY_TOLERANCE=0.5 /
       FYI='Ritchie, et al., 5th IAFSS, C_3.4 H_6.2 O_2.5'
       SOOT_YIELD = 0.02
       O          = 2.5
-      C          = 3.4/
-      H          = 6.2
+      C          = 3.4 
+      H          = 6.2 
       HEAT_OF_COMBUSTION = 19660 /
 
 - Ignitor fire (HRRPUA = heat release per unit area kW/m^2)
@@ -43,7 +43,7 @@ cPRES VELOCITY_TOLERANCE=0.5 /
 &RAMP ID='RAMPFIRE',T=36.0,F=0.0 /
 &VENT XB=4.0,4.15,1,2,0,0,SURF_ID='IGN FIRE' / boundary fuel **
  
-- Boundary fuel model for Surface Fuels (based on Catchpool data, ponderosa pine) **
+- Fuel element model for Surface Fuels (based on Catchpool data, ponderosa pine) **
 &PART ID='needles',TREE=.TRUE.,
       QUANTITIES='VEG_TEMPERATURE',
       VEG_INITIAL_TEMPERATURE=27,
