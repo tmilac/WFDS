@@ -614,6 +614,11 @@ REAL(EB) :: FCTR_DT_CYCLES,FCTR_RDT_CYCLES,Q_VEG_CHAR_TOTAL,MPV_CHAR_CO2_TOTAL,M
 REAL(EB) :: VEG_CRITICAL_MASSFLUX,VEG_CRITICAL_MASSSOURCE
 REAL(EB) :: CM,CN
 
+!Stiff ODE solver
+REAL(EB), DIMENSION(:) :: Y_VEG(6),Y_VEG_DOT(6)
+INTEGER, DIMENSION(:) :: NEQ_VEG(3)
+LOGICAL :: STIFF_SOLVER
+
 !place holder
 REAL(EB) :: RCP_TEMPORARY
 
@@ -1114,15 +1119,18 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
    ENDIF IF_NOT_IGNITOR1
  ENDIF IF_VEG_DEGRADATION_ARRHENIUS
 
- STIFF_SOLVER = .FALSE.
- IF (STIFF_SOLVER) THEN
+ STIFF_SOLVER = .TRUE.
+ IF (STIFF_SOLVER .AND. .NOT. LP%IGNITOR) THEN
   Y_VEG(1) = LP%VEG_MOIST_MASS
   Y_VEG(2) = LP%VEG_FUEL_MASS
   Y_VEG(3) = LP%VEG_CHAR_MASS
-  Y_VEG(4) = LP%VEG_CHAR_MASS
+  Y_VEG(4) = LP%VEG_ASH_MASS
   Y_VEG(5) = LP%VEG_CHAR_MASS
-  Y_VEG(5) = LP%TMP
+  Y_VEG(6) = LP%TMP
   Y_VEG_DOT(:) = 0.0_EB 
+  NEQ_VEG(1) = 6
+  NEQ_VEG(2) = NM
+  NEQ_VEG(3) = I
   CALL FEX(NEQ_VEG,T,Y_VEG,Y_VEG_DOT)
  ENDIF
 
@@ -1954,11 +1962,35 @@ VEG_CLOCK_BC = T
 
 END SUBROUTINE BNDRY_VEG_MASS_ENERGY_TRANSFER
 !
-!************************************************************************************************
-!************************************************************************************************
+!***********************************************************************************************
+SUBROUTINE FEX(NEQ,TIME_VEG,Y,YDOT)
+!
+! Subroutine called by stiff ODE solver
+!
+INTEGER, INTENT(IN), DIMENSION(:) :: NEQ(3)
+INTEGER :: IPC
+REAL(EB), INTENT(INOUT), DIMENSION(:) :: Y(6),YDOT(6)
+REAL(EB), INTENT(INOUT) :: TIME_VEG
+!
+CALL POINT_TO_MESH(NEQ(2))
+LP => PARTICLE(NEQ(3))
+IPC = LP%CLASS
+PC=>PARTICLE_CLASS(IPC)
+
+print '(A,2x,2I)','vege FEX NM,I,',neq(2),neq(3)
+print '(A,2x,6ES12.4)','vege   Y,',Y(:)
+print '(A,2x,6ES12.4)','vege LP%',LP%VEG_MOIST_MASS,LP%VEG_FUEL_MASS,LP%VEG_CHAR_MASS,LP%VEG_ASH_MASS,LP%VEG_CHAR_MASS, &
+                                  LP%TMP
+
+END SUBROUTINE FEX
+  
+!***********************************************************************************************
+!
+!\/\/\////\/\/\/\/\/\/\\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+!\/\/\////\/\/\/\/\/\/\\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 SUBROUTINE INITIALIZE_LEVEL_SET_FIREFRONT(NM)
-!************************************************************************************************
-!************************************************************************************************
+!\/\/\////\/\/\/\/\/\/\\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+!\/\/\////\/\/\/\/\/\/\\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 !
 ! Level set based modeling of fire front propatagion across terrain. 
 ! There are four implementations from the simplest in which the wind is constant
