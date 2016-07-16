@@ -1210,7 +1210,7 @@ print '(A,2x,6ES12.4)','vege DLSODA  Y,',Y_VEG(1:6)
   Q_VEG_CHAR_TOTAL  = Q_VEG_CHAR_TOTAL + Q_VEG_CHAR
 
 ! Bounds
-print*,'==++vege y(1),mpv_moist_min',y_veg(1),mpv_moist_min
+!print*,'==++vege y(1),mpv_moist_min',y_veg(1),mpv_moist_min
   IF (Y_VEG(1) <= MPV_MOIST_MIN) Y_VEG(1) = 0.0
   IF (Y_VEG(2) <= MPV_VEG_MIN)   Y_VEG(2) = 0.0
   IF (Y_VEG(2) <= MPV_VEG_MIN .AND. Y_VEG(3) <= MPV_CHAR_MIN) THEN
