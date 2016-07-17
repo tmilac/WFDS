@@ -616,12 +616,15 @@ REAL(EB) :: VEG_CRITICAL_MASSFLUX,VEG_CRITICAL_MASSSOURCE
 REAL(EB) :: CM,CN
 
 !Stiff ODE solver
-INTEGER, DIMENSION(:) :: NEQ_VEG(3),IWORK_VEG(26)
+!Dimension of RWORK_VEG = 22 + (number of eqns)*MAX(16,number of eqns + 9)
+!Dimension of IWORK_VEG >= 20 + number of eqns)
+!number of equations = NEQ(1)
+INTEGER, DIMENSION(:) :: NEQ_VEG(3),IWORK_VEG(25)
 INTEGER :: IOPT_VEG,ITOL_VEG,ITASK_VEG,ISTATE_VEG,JDUM_VEG,JT_VEG,LIW_VEG,LRW_VEG
-!REAL(EB), DIMENSION(:) :: ATOL_VEG(6),Y_VEG(10),Y_DOT_VEG(6),RWORK_VEG(118)
+!REAL(EB), DIMENSION(:) :: ATOL_VEG(5),Y_VEG(9),Y_DOT_VEG(5),RWORK_VEG(102)
 !REAL(EB) :: RTOL_VEG,TOUT_VEG
 DOUBLE PRECISION ATOL_VEG,Y_VEG,Y_DOT_VEG,RWORK_VEG
-DIMENSION ATOL_VEG(6),Y_VEG(10),Y_DOT_VEG(6),RWORK_VEG(118)
+DIMENSION ATOL_VEG(5),Y_VEG(9),Y_DOT_VEG(5),RWORK_VEG(102)
 DOUBLE PRECISION RTOL_VEG,TOUT_VEG
 
 !place holder
@@ -1133,35 +1136,34 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
   Y_VEG(2) = LP%VEG_FUEL_MASS
   Y_VEG(3) = LP%VEG_CHAR_MASS
   Y_VEG(4) = LP%VEG_ASH_MASS
-  Y_VEG(5) = Y_VEG(1) + Y_VEG(2) + Y_VEG(3) + Y_VEG(4)
-  Y_VEG(6) = LP%TMP
-  Y_VEG(7) = QCON_VEG
-  Y_VEG(8) = QRAD_VEG
+! Y_VEG(5) = Y_VEG(1) + Y_VEG(2) + Y_VEG(3) + Y_VEG(4)
+  Y_VEG(5) = LP%TMP
+  Y_VEG(6) = QCON_VEG
+  Y_VEG(7) = QRAD_VEG
   ZZ_GET(1:N_TRACKED_SPECIES) = ZZ(II,JJ,KK,1:N_TRACKED_SPECIES)
   CALL GET_MASS_FRACTION(ZZ_GET,O2_INDEX,Y_O2)
-  Y_VEG(9) = RHO_GAS*Y_O2 
-  Y_VEG(10)= 1._EB+BETA_CHAR_VEG*SQRT(RE_D)
+  Y_VEG(8) = RHO_GAS*Y_O2 
+  Y_VEG(9)= 1._EB+BETA_CHAR_VEG*SQRT(RE_D)
 
 
   Y_DOT_VEG(:) = 0.0_EB 
-  NEQ_VEG(1) = 6
-  NEQ_VEG(2) = NM
+  NEQ_VEG(1) = 5 !number of equations
+  NEQ_VEG(2) = NM !mesh number
   NEQ_VEG(3) = I !Particle loop index
 !
-  ITOL_VEG    = 2
-  RTOL_VEG    = 1.D-4
-  ATOL_VEG(1) = 1.D-6
+  ITOL_VEG    = 2 !always 2
+  RTOL_VEG    = 1.D-4 !relative tolerance
+  ATOL_VEG(1) = 1.D-6 !absolute tolerance
   ATOL_VEG(2) = 1.D-6
   ATOL_VEG(3) = 1.D-6
   ATOL_VEG(4) = 1.D-6
   ATOL_VEG(5) = 1.D-6
-  ATOL_VEG(6) = 1.D-6
   ITASK_VEG   = 1
   ISTATE_VEG  = 1
   IOPT_VEG    = 0
-  LRW_VEG     = 118
-  LIW_VEG     = 26
-  JT_VEG      = 2
+  LRW_VEG     = 102 !dimension of RWORK_VEG
+  LIW_VEG     = 25 !20 + NEQ(1)
+  JT_VEG      = 2 !always 2
 
   TOUT_VEG = T + DT
 
@@ -1186,9 +1188,9 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
               LRW_VEG,IWORK_VEG,LIW_VEG,JDUM_VEG,JT_VEG)
 
 !print '(A,2x,1I3)','+ISTATE,',ISTATE_VEG
-print '(A,2x,6ES12.4)','vege DLSODA  Y,',Y_VEG(1:6)
+print '(A,2x,5ES12.4)','vege DLSODA  Y,',Y_VEG(1:5)
 
-  TMP_VEG_NEW  = Y_VEG(6)
+  TMP_VEG_NEW  = Y_VEG(5)
 
 ! Moisture
   MPV_MOIST_LOSS    = LP%VEG_MOIST_MASS - Y_VEG(1)
@@ -2067,19 +2069,19 @@ SUBROUTINE FEX(NEQ,TIME_VEG,Y,YDOT)
 ! Y(2) = Dry veg mass
 ! Y(3) = Char mass
 ! Y(4) = Ash mass
-! Y(5) = Total mass 
-! Y(6) = Temperature
-! Y(7) = divergence of convective heat flux on fuel element
-! Y(8) = divergence of radiant heat flux on fuel element
-! Y(9) = RHO_GAS*YO2
-! Y(10) = (1+VEG_BETA_CHAR)*SQRT(RE_D) for Char oxidation
+! Y(5) = Total mass  NOW REMOVED
+! Y(5) = Temperature
+! Y(6) = divergence of convective heat flux on fuel element
+! Y(7) = divergence of radiant heat flux on fuel element
+! Y(8) = RHO_GAS*YO2
+! Y(9) = (1+VEG_BETA_CHAR)*SQRT(RE_D) for Char oxidation
 !
 INTEGER, INTENT(IN), DIMENSION(:) :: NEQ(3)
 INTEGER :: IPC
-!REAL(EB), INTENT(INOUT), DIMENSION(:) :: Y(10),YDOT(6)
+!REAL(EB), INTENT(INOUT), DIMENSION(:) :: Y(9),YDOT(5)
 !REAL(EB), INTENT(INOUT) :: TIME_VEG
 DOUBLE PRECISION TIME_VEG,Y,YDOT
-DIMENSION Y(10),YDOT(6)
+DIMENSION Y(9),YDOT(5)
 REAL(EB) :: KH2O,KPYR,KCHAR
 REAL(EB) :: CPASH,CPCHAR,CPH2O,CPVEG
 REAL(EB) :: MCP_MOIST,MCP_SOLID,MCP_TOTAL
@@ -2091,14 +2093,14 @@ IPC = LP%CLASS
 PC=>PARTICLE_CLASS(IPC)
 !
 CPH2O  = 4190._EB !J/kg/K
-CPVEG  = (0.01_EB + 0.0037_EB*Y(6))*1000._EB !J/kg/K Ritchie IAFSS 1997:177-188
-CPCHAR = 420._EB + 2.09_EB*Y(6) + 6.85E-4_EB*Y(6)**2 !J/kg/K Park etal. C&F 2010 147:481-494
+CPVEG  = (0.01_EB + 0.0037_EB*Y(5))*1000._EB !J/kg/K Ritchie IAFSS 1997:177-188
+CPCHAR = 420._EB + 2.09_EB*Y(5) + 6.85E-4_EB*Y(5)**2 !J/kg/K Park etal. C&F 2010 147:481-494
 CPASH  = 800._EB
 NUASH  = PC%VEG_ASH_FRACTION/PC%VEG_CHAR_FRACTION
 !
-KH2O  = Y(1)*PC%VEG_A_H2O*EXP(-PC%VEG_E_H2O/Y(6))/SQRT(Y(6))
-KPYR  = Y(2)*PC%VEG_A_PYR*EXP(-PC%VEG_E_PYR/Y(6))
-KCHAR = Y(9)*PC%VEG_A_CHAR/PC%VEG_NU_O2_CHAR*LP%VEG_SV*LP%VEG_PACKING_RATIO*EXP(-PC%VEG_E_CHAR/Y(6))*Y(10)
+KH2O  = Y(1)*PC%VEG_A_H2O*EXP(-PC%VEG_E_H2O/Y(5))/SQRT(Y(5))
+KPYR  = Y(2)*PC%VEG_A_PYR*EXP(-PC%VEG_E_PYR/Y(5))
+KCHAR = Y(8)*PC%VEG_A_CHAR/PC%VEG_NU_O2_CHAR*LP%VEG_SV*LP%VEG_PACKING_RATIO*EXP(-PC%VEG_E_CHAR/Y(5))*Y(9)
 !
 MCP_MOIST = Y(1)*CPH2O
 MCP_SOLID = Y(2)*CPVEG + Y(3)*CPCHAR + Y(4)*CPASH
@@ -2108,14 +2110,14 @@ YDOT(1) = -KH2O
 YDOT(2) = -KPYR
 YDOT(3) = -KCHAR + PC%VEG_CHAR_FRACTION*KPYR
 YDOT(4) =  NUASH*KCHAR
-YDOT(5) = -KH2O - (1._EB - PC%VEG_CHAR_FRACTION)*KPYR - (1._EB - NUASH)*KCHAR
-YDOT(6) = -(PC%VEG_H_H2O*KH2O + PC%VEG_H_PYR*KPYR + PC%VEG_CHAR_ENTHALPY_FRACTION*PC%VEG_H_CHAR*KCHAR - Y(7) - Y(8))/MCP_TOTAL
+!YDOT(5) = -KH2O - (1._EB - PC%VEG_CHAR_FRACTION)*KPYR - (1._EB - NUASH)*KCHAR
+YDOT(5) = -(PC%VEG_H_H2O*KH2O + PC%VEG_H_PYR*KPYR + PC%VEG_CHAR_ENTHALPY_FRACTION*PC%VEG_H_CHAR*KCHAR - Y(6) - Y(7))/MCP_TOTAL
 
 print '(A,2x,2I)','====== vege FEX NM,I,',neq(2),neq(3)
-print '(A,2x,10ES12.4)','vege FEX   Y,',Y(:)
+print '(A,2x,9ES12.4)','vege FEX   Y,',Y(:)
 print '(A,2x,6ES12.4)','vege FEX LP%',LP%VEG_MOIST_MASS,LP%VEG_FUEL_MASS,LP%VEG_CHAR_MASS,LP%VEG_ASH_MASS,LP%VEG_CHAR_MASS, &
                                   LP%TMP
-print '(A,2x,6ES12.4)','vege FEX  YDOT,',YDOT(:)
+print '(A,2x,5ES12.4)','vege FEX  YDOT,',YDOT(:)
 
 END SUBROUTINE FEX
   
