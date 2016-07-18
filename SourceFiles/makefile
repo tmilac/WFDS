@@ -167,11 +167,12 @@ mpi_intel_linux_32 : obj = fds_mpi_intel_linux_32
 mpi_intel_linux_32 : setup $(obj_mpi)
 	$(FCOMPL) $(FFLAGS) $(LFLAGS) -o $(obj) $(obj_mpi)
 
-mpi_intel_linux_64 : FFLAGS = -m64 -O3 -vec_report0
+#mpi_intel_linux_64 : FFLAGS = -m64 -O3 -vec_report0
+mpi_intel_linux_64 : FFLAGS = -m64 -O3 -ipo -axCORE-AVX2 -xSSE4.2
 mpi_intel_linux_64 : CFLAGS = -m64 -O -Dpp_noappend -vec_report0
 mpi_intel_linux_64 : LFLAGS = -static-intel
-mpi_intel_linux_64 : FCOMPL = mpif77
-mpi_intel_linux_64 : CCOMPL = icc
+mpi_intel_linux_64 : FCOMPL = /shared/openmpi64/bin/mpif77
+mpi_intel_linux_64 : CCOMPL = gcc
 mpi_intel_linux_64 : obj = fds_mpi_intel_linux_64
 mpi_intel_linux_64 : setup $(obj_mpi)
 	$(FCOMPL) $(FFLAGS) $(LFLAGS) -o $(obj) $(obj_mpi)
