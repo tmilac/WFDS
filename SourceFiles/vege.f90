@@ -1188,8 +1188,9 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
   CALL DLSODA(FEX,NEQ_VEG,Y_VEG,TSTART_VEG,TOUT_VEG,ITOL_VEG,RTOL_VEG,ATOL_VEG,ITASK_VEG,ISTATE_VEG,IOPT_VEG,RWORK_VEG, &
               LRW_VEG,IWORK_VEG,LIW_VEG,JDUM_VEG,JT_VEG)
 
-!print '(A,2x,1I3)','+ISTATE,',ISTATE_VEG
-!print '(A,2x,5ES12.4)','vege DLSODA  Y,',Y_VEG(1:5)
+!print '(A,2x,1I3)','Y(1:7),',ISTATE_VEG
+IF(NM == 1 .AND. II==15 .AND. JJ==11 .AND. KK==6) print '(A,2x,7ES12.4)','DLSODA  Y(1:7),',Y_VEG(1:7)
+IF(NM == 1 .AND. IWORK_VEG(19) == 2)print '(A,1x,I3)','I,J,K @ IWORK(19)=2 = ',II,JJ,KK
 
   TMP_VEG_NEW  = Y_VEG(5)
 
@@ -2138,7 +2139,6 @@ SUBROUTINE INITIALIZE_LEVEL_SET_FIREFRONT(NM)
 ! Issues:
 ! 1) Need to make level set computation mesh dependent so the the LS slice file
 !    is created only where fire is expected
-! 2) Need to make computation capable of running with multiple meshes and processors
 !
 !
 INTEGER, INTENT(IN) :: NM
