@@ -285,9 +285,9 @@ mpi_intel_osx_32_db : setup $(obj_mpi)
 # un-comment following line if building intel_osx_64 target
 #irad.o:	FFLAGS = -O0 -m64 -heap-arrays
 #intel_osx_64 : FFLAGS = -O2 -m64 -heap-arrays
-intel_osx_64 : FFLAGS = -O3 -m64  -ipo -axCORE-AVX2 -xSSE4.2
-intel_osx_64 : CFLAGS = -O2 -m64 -Dpp_noappend -Dpp_OSX
-intel_osx_64 : LFLAGS = -static-intel
+intel_osx_64 : FFLAGS = -m64 -O3 -ipo -axCORE-AVX2 -xSSE4.2
+intel_osx_64 : CFLAGS = -m64 -O2 -Dpp_noappend -Dpp_OSX
+intel_osx_64 : LFLAGS = -lodepack -static-intel
 intel_osx_64 : FCOMPL = ifort
 intel_osx_64 : CCOMPL = gcc
 intel_osx_64 : obj = fds_intel_osx_64
