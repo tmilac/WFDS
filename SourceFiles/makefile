@@ -144,7 +144,7 @@ intel_linux_32_profile : FFLAGS = -m32 -O2 -p
 intel_linux_32_profile : CFLAGS = -m32 -O2 -Dpp_noappend -p
 #intel_linux_32_profile : LFLAGS = -static-intel
 # Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
-intel_linux_32_profile : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
+intel_linux_32_profile : LFLAGS  = -lodepack -static-intel
 intel_linux_32_profile : FCOMPL = ifort
 intel_linux_32_profile : CCOMPL = gcc
 intel_linux_32_profile : obj = fds_intel_linux_32_profile
@@ -152,10 +152,10 @@ intel_linux_32_profile : setup $(obj_serial)
 	$(FCOMPL) $(FFLAGS) $(LFLAGS) -o $(obj) $(obj_serial)
 
 intel_linux_64 : FFLAGS = -m64 -O3 -ipo -axCORE-AVX2 -xSSE4.2
-intel_linux_64 : CFLAGS = -m64 -O -Dpp_noappend
+intel_linux_64 : CFLAGS = -m64 -O3 -ipo -Dpp_noappend
 #intel_linux_64 : LFLAGS = -static-intel
 # Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
-intel_linux_64 : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
+intel_linux_64 : LFLAGS  = -lodepack -static-intel
 intel_linux_64 : FCOMPL = ifort
 intel_linux_64 : CCOMPL = gcc
 intel_linux_64 : obj = fds_intel_linux_64
@@ -174,7 +174,7 @@ mpi_intel_linux_32 : setup $(obj_mpi)
 	$(FCOMPL) $(FFLAGS) $(LFLAGS) -o $(obj) $(obj_mpi)
 
 mpi_intel_linux_64 : FFLAGS = -m64 -O3 -ipo -axCORE-AVX2 -xSSE4.2
-mpi_intel_linux_64 : CFLAGS = -m64 -O -Dpp_noappend 
+mpi_intel_linux_64 : CFLAGS = -m64 -O3 -ipo -Dpp_noappend 
 #mpi_intel_linux_64 : LFLAGS = -static-intel
 # Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
 mpi_intel_linux_64 : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
@@ -199,7 +199,7 @@ intel_linux_32_db : FFLAGS = -m32 -check all -warn unused -O0 -auto -WB -traceba
 intel_linux_32_db : CFLAGS = -m32 -Dpp_noappend
 #intel_linux_32_db : LFLAGS = -static-intel
 # Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
-intel_linux_32_db : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
+intel_linux_32_db : LFLAGS  = -lodepack -static-intel
 intel_linux_32_db : FCOMPL = ifort
 intel_linux_32_db : CCOMPL = gcc
 intel_linux_32_db : obj = fds_intel_linux_32_db
@@ -210,7 +210,7 @@ intel_linux_64_db : FFLAGS = -m64 -check -warn unused -O0 -auto -WB -traceback -
 intel_linux_64_db : CFLAGS = -m64 -Dpp_noappend
 #intel_linux_64_db : LFLAGS = -static-intel
 # Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
-intel_linux_64_db : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
+intel_linux_64_db : LFLAGS  = -lodepack -static-intel
 intel_linux_64_db : FCOMPL = ifort
 intel_linux_64_db : CCOMPL = gcc
 intel_linux_64_db : obj = fds_intel_linux_64_db
