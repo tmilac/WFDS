@@ -142,7 +142,9 @@ intel_linux_32 : setup $(obj_serial)
 # 3.  type: gprof fds_linux_32_profile > results.out
 intel_linux_32_profile : FFLAGS = -m32 -O2 -p
 intel_linux_32_profile : CFLAGS = -m32 -O2 -Dpp_noappend -vec_report0 -p
-intel_linux_32_profile : LFLAGS = -static-intel
+#intel_linux_32_profile : LFLAGS = -static-intel
+# Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
+intel_linux_32_profile : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
 intel_linux_32_profile : FCOMPL = ifort
 intel_linux_32_profile : CCOMPL = icc
 intel_linux_32_profile : obj = fds_intel_linux_32_profile
@@ -151,7 +153,9 @@ intel_linux_32_profile : setup $(obj_serial)
 
 intel_linux_64 : FFLAGS = -m64 -O3 -ipo -axCORE-AVX2 -xSSE4.2
 intel_linux_64 : CFLAGS = -m64 -O -Dpp_noappend -vec_report0
-intel_linux_64 : LFLAGS = -static-intel
+#intel_linux_64 : LFLAGS = -static-intel
+# Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
+intel_linux_64 : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
 intel_linux_64 : FCOMPL = ifort
 intel_linux_64 : CCOMPL = gcc
 intel_linux_64 : obj = fds_intel_linux_64
@@ -160,7 +164,9 @@ intel_linux_64 : setup $(obj_serial)
 
 mpi_intel_linux_32 : FFLAGS = -m32 -O3 -ipo -axCORE-AVX2 -xSSE4.2
 mpi_intel_linux_32 : CFLAGS = -m32 -O -Dpp_noappend -vec_report0
-mpi_intel_linux_32 : LFLAGS = -static-intel
+#mpi_intel_linux_32 : LFLAGS = -static-intel
+# Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
+mpi_intel_linux_32 : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
 mpi_intel_linux_32 : FCOMPL = mpif77
 mpi_intel_linux_32 : CCOMPL = icc
 mpi_intel_linux_32 : obj = fds_mpi_intel_linux_32
@@ -169,7 +175,9 @@ mpi_intel_linux_32 : setup $(obj_mpi)
 
 mpi_intel_linux_64 : FFLAGS = -m64 -O3 -ipo -axCORE-AVX2 -xSSE4.2
 mpi_intel_linux_64 : CFLAGS = -m64 -O -Dpp_noappend -vec_report0
-mpi_intel_linux_64 : LFLAGS = -static-intel
+#mpi_intel_linux_64 : LFLAGS = -static-intel
+# Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
+mpi_intel_linux_64 : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
 mpi_intel_linux_64 : FCOMPL = mpif77
 mpi_intel_linux_64 : CCOMPL = icc
 mpi_intel_linux_64 : obj = fds_mpi_intel_linux_64
@@ -178,7 +186,9 @@ mpi_intel_linux_64 : setup $(obj_mpi)
 
 mpi_intel_linux_64ib : FFLAGS = -m64 -O3
 mpi_intel_linux_64ib : CFLAGS = -m64 -O -Dpp_noappend -vec_report0
-mpi_intel_linux_64ib : LFLAGS = -static-intel
+#mpi_intel_linux_64ib : LFLAGS = -static-intel
+# Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
+mpi_intel_linux_64ib : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
 mpi_intel_linux_64ib : FCOMPL = mpif77
 mpi_intel_linux_64ib : CCOMPL = icc
 mpi_intel_linux_64ib : obj = fds_mpi_intel_linux_64ib
@@ -187,7 +197,9 @@ mpi_intel_linux_64ib : setup $(obj_mpi)
 
 intel_linux_32_db : FFLAGS = -m32 -check all -warn unused -O0 -auto -WB -traceback -g -fpe0 -fltconsistency -vec_report0 -ftrapuv -debug full
 intel_linux_32_db : CFLAGS = -m32 -Dpp_noappend
-intel_linux_32_db : LFLAGS = -static-intel
+#intel_linux_32_db : LFLAGS = -static-intel
+# Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
+intel_linux_32_db : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
 intel_linux_32_db : FCOMPL = ifort
 intel_linux_32_db : CCOMPL = icc
 intel_linux_32_db : obj = fds_intel_linux_32_db
@@ -196,7 +208,9 @@ intel_linux_32_db : setup $(obj_serial)
 
 intel_linux_64_db : FFLAGS = -m64 -check -warn unused -O0 -auto -WB -traceback -g -fpe0 -fltconsistency -vec_report0 -stand f95
 intel_linux_64_db : CFLAGS = -m64 -Dpp_noappend
-intel_linux_64_db : LFLAGS = -static-intel
+#intel_linux_64_db : LFLAGS = -static-intel
+# Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
+intel_linux_64_db : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
 intel_linux_64_db : FCOMPL = ifort
 intel_linux_64_db : CCOMPL = icc
 intel_linux_64_db : obj = fds_intel_linux_64_db
@@ -205,7 +219,9 @@ intel_linux_64_db : setup $(obj_serial)
 
 mpi_intel_linux_32_db : FFLAGS = -m32 -check -warn unused -O0 -auto -WB -traceback -g -fpe0 -fltconsistency  -vec_report0
 mpi_intel_linux_32_db : CFLAGS = -m32 -Dpp_noappend
-mpi_intel_linux_32_db : LFLAGS = -static-intel
+#mpi_intel_linux_32_db : LFLAGS = -static-intel
+# Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
+mpi_intel_linux_32_db : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
 mpi_intel_linux_32_db : FCOMPL = mpif77
 mpi_intel_linux_32_db : CCOMPL = icc
 mpi_intel_linux_32_db : obj = fds_mpi_intel_linux_32_db
@@ -214,7 +230,9 @@ mpi_intel_linux_32_db : setup $(obj_mpi)
 
 mpi_intel_linux_64_db : FFLAGS = -m64 -check -warn unused -O0 -auto -WB -traceback -g -fpe0 -fltconsistency -vec_report0
 mpi_intel_linux_64_db : CFLAGS = -m64 -O -Dpp_noappend
-mpi_intel_linux_64_db : LFLAGS = -static-intel
+#mpi_intel_linux_64_db : LFLAGS = -static-intel
+# Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
+mpi_intel_linux_64_db : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
 mpi_intel_linux_64_db : FCOMPL = mpif77
 mpi_intel_linux_64_db : CCOMPL = icc
 mpi_intel_linux_64_db : obj = fds_mpi_intel_linux_64_db
