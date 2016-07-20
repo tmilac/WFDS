@@ -152,7 +152,7 @@ intel_linux_32_profile : setup $(obj_serial)
 	$(FCOMPL) $(FFLAGS) $(LFLAGS) -o $(obj) $(obj_serial)
 
 intel_linux_64 : FFLAGS = -m64 -O3 -ipo -axCORE-AVX2 -xSSE4.2
-intel_linux_64 : CFLAGS = -m64 -O3 -ipo -Dpp_noappend
+intel_linux_64 : CFLAGS = -m64 -O3 -Dpp_noappend
 #intel_linux_64 : LFLAGS = -static-intel
 # Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
 intel_linux_64 : LFLAGS  = -lodepack -static-intel
@@ -174,7 +174,7 @@ mpi_intel_linux_32 : setup $(obj_mpi)
 	$(FCOMPL) $(FFLAGS) $(LFLAGS) -o $(obj) $(obj_mpi)
 
 mpi_intel_linux_64 : FFLAGS = -m64 -O3 -ipo -axCORE-AVX2 -xSSE4.2
-mpi_intel_linux_64 : CFLAGS = -m64 -O3 -ipo -Dpp_noappend 
+mpi_intel_linux_64 : CFLAGS = -m64 -O3 -Dpp_noappend 
 #mpi_intel_linux_64 : LFLAGS = -static-intel
 # Add path to odepack library (e.g., environmental variable LD_LIBRARY_PATH in Linux)
 mpi_intel_linux_64 : LFLAGS  = -L$(MPIDIST)/lib -lodepack -static-intel
