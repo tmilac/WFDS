@@ -294,10 +294,10 @@ intel_osx_64 : obj = fds_intel_osx_64
 intel_osx_64 : setup $(obj_serial)
 	$(FCOMPL) $(FFLAGS) $(LFLAGS) -o $(obj) $(obj_serial)
 
-mpi_intel_osx_64 : FFLAGS  = -O2 -m64 -heap-arrays
-mpi_intel_osx_64 : CFLAGS  = -O2 -m64 -Dpp_noappend -Dpp_OSX
-mpi_intel_osx_64 : LFLAGS  = -static-intel
-mpi_intel_osx_64 : FCOMPL  = mpif77
+mpi_intel_osx_64 : FFLAGS  = -m64 -O3 -ipo -axCORE-AVX2 -xSSE4.2
+mpi_intel_osx_64 : CFLAGS  = -m64 -O3 -Dpp_noappend -Dpp_OSX   
+mpi_intel_osx_64 : LFLAGS  = -lodepack -static-intel
+mpi_intel_osx_64 : FCOMPL  = mpifort
 mpi_intel_osx_64 : CCOMPL  = gcc
 mpi_intel_osx_64 : obj = fds_mpi_intel_osx_64
 mpi_intel_osx_64 : setup $(obj_mpi)
