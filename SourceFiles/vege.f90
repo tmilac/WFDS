@@ -601,7 +601,7 @@ REAL(EB) :: MW_AVERAGE,MW_VEG_MOIST_TERM,MW_VEG_VOLIT_TERM
 REAL(EB) :: XI,YJ,ZK
 REAL(EB) :: A_H2O_VEG,E_H2O_VEG,A_PYR_VEG,E_PYR_VEG,H_PYR_VEG,R_H_PYR_VEG
 REAL(EB) :: A_CHAR_VEG,E_CHAR_VEG,BETA_CHAR_VEG,NU_CHAR_VEG,NU_ASH_VEG,NU_O2_CHAR_VEG, &
-            MPV_ASH,MPV_ASH_MAX,MPV_CHAR,MPV_CHAR_LOSS,MPV_CHAR_MIN,MPV_CHAR_CO2,Y_O2, &
+            MPV_ASH,MPV_ASH_MAX,MPV_CHAR,MPV_CHAR_LOSS,MPV_CHAR_MIN,MPV_CHAR_CO2,MPV_CHAR_O2,Y_O2, &
             H_CHAR_VEG ,ORIG_PACKING_RATIO,CP_VEG_FUEL_AND_CHAR_MASS,CP_MASS_VEG_SOLID,     &
             TMP_CHAR_MAX
 REAL(EB) :: ZZ_GET(0:N_TRACKED_SPECIES)
@@ -609,7 +609,7 @@ INTEGER :: I,II,JJ,KK,IIX,JJY,KKZ,IPC,N_TREE,I_FUEL
 INTEGER, INTENT(IN) :: NM
 LOGICAL :: VEG_DEGRADATION_LINEAR,VEG_DEGRADATION_ARRHENIUS
 INTEGER :: IDT,NDT_CYCLES
-REAL(EB) :: FCTR_DT_CYCLES,FCTR_RDT_CYCLES,Q_VEG_CHAR_TOTAL,MPV_CHAR_CO2_TOTAL,MPV_CHAR_LOSS_TOTAL, &
+REAL(EB) :: FCTR_DT_CYCLES,FCTR_RDT_CYCLES,Q_VEG_CHAR_TOTAL,MPV_CHAR_CO2_TOTAL,MPV_CHAR_O2_TOTAL,MPV_CHAR_LOSS_TOTAL, &
             MPV_MOIST_LOSS_TOTAL,MPV_VOLIT_TOTAL,VEG_VF
 REAL(EB) :: VEG_CRITICAL_MASSFLUX,VEG_CRITICAL_MASSSOURCE
 REAL(EB) :: CM,CN
@@ -736,6 +736,7 @@ PARTICLE_LOOP: DO I=1,NLP
  MPV_MOIST_LOSS = 0.0_EB
  MPV_CHAR_LOSS  = 0.0_EB
  MPV_CHAR_CO2   = 0.0_EB
+ MPV_CHAR_O2    = 0.0_EB
  MPV_VOLIT      = 0.0_EB
  MPV_ADDED      = 0.0_EB
  MW_VEG_MOIST_TERM = 0.0_EB
@@ -744,11 +745,12 @@ PARTICLE_LOOP: DO I=1,NLP
  CP_MASS_VEG_SOLID         = 0.0_EB
  VEG_DEGRADATION_LINEAR    = .FALSE.
  VEG_DEGRADATION_ARRHENIUS = .FALSE.
- MPV_CHAR_CO2_TOTAL   = 0.0_EB !needed for time subcycling
- MPV_CHAR_LOSS_TOTAL  = 0.0_EB !needed for time subcycling
- MPV_MOIST_LOSS_TOTAL = 0.0_EB !needed for time subcycling
- MPV_VOLIT_TOTAL  = 0.0_EB !needed for time subcycling
- Q_VEG_CHAR_TOTAL = 0.0_EB !needed for time subcyling
+ MPV_CHAR_CO2_TOTAL   = 0.0_EB
+ MPV_CHAR_O2_TOTAL   = 0.0_EB 
+ MPV_CHAR_LOSS_TOTAL  = 0.0_EB 
+ MPV_MOIST_LOSS_TOTAL = 0.0_EB 
+ MPV_VOLIT_TOTAL  = 0.0_EB 
+ Q_VEG_CHAR_TOTAL = 0.0_EB
 
 ! Vegetation variables
  VEG_VF             = LP%VEG_VOLFRACTION !volume fraction of vegetation in cell
@@ -1064,7 +1066,7 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
      LP%VEG_FUEL_MASS = MPV_VEG
      LP%VEG_CHAR_MASS = MPV_CHAR
 
-!Char oxidation or fuel element within the Arrhenius pyrolysis model
+!Char oxidation of fuel element within the Arrhenius pyrolysis model
 !(note that this can be handled only approximately with the conserved
 !scalar based gas-phase combustion model - no gas phase oxygen is consumed by
 !the char oxidation reaction since it would be inconsistent with the state
@@ -1074,12 +1076,13 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
        ZZ_GET(1:N_TRACKED_SPECIES) = ZZ(II,JJ,KK,1:N_TRACKED_SPECIES)
        CALL GET_MASS_FRACTION(ZZ_GET,O2_INDEX,Y_O2)
        MPV_CHAR_LOSS = FCTR_DT_CYCLES*DT*RHO_GAS*Y_O2*A_CHAR_VEG/NU_O2_CHAR_VEG*SV_VEG*LP%VEG_PACKING_RATIO*  &
-                        EXP(-E_CHAR_VEG/TMP_VEG)*(1+BETA_CHAR_VEG*SQRT(RE_D))
+                        EXP(-E_CHAR_VEG/TMP_VEG)*(1._EB+BETA_CHAR_VEG*SQRT(RE_D))
        MPV_CHAR_LOSS = MIN(MPV_CHAR_LOSS,MPV_CHAR_LOSS_MAX) !user bound
        MPV_CHAR_LOSS = MIN(MPV_CHAR,MPV_CHAR_LOSS)
        MPV_CHAR      = MPV_CHAR - MPV_CHAR_LOSS
        MPV_ASH       = MPV_ASH + NU_ASH_VEG*MPV_CHAR_LOSS
        MPV_CHAR_CO2  = (1._EB + NU_O2_CHAR_VEG - NU_ASH_VEG)*MPV_CHAR_LOSS
+       MPV_CHAR_O2   = NU_O2_CHAR_VEG*MPV_CHAR_LOSS
        CP_MASS_VEG_SOLID = CP_VEG*MPV_VEG + CP_CHAR*MPV_CHAR + CP_ASH*MPV_ASH
        LP%VEG_CHAR_MASS = MPV_CHAR !kg/m^3
        LP%VEG_ASH_MASS  = MPV_ASH
@@ -1121,7 +1124,8 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
  MPV_MOIST_LOSS_TOTAL = MPV_MOIST_LOSS_TOTAL + MPV_MOIST_LOSS !needed for subcycling
  MPV_VOLIT_TOTAL      = MPV_VOLIT_TOTAL      + MPV_VOLIT !needed for subcycling
  MPV_CHAR_CO2_TOTAL   = MPV_CHAR_CO2_TOTAL   + MPV_CHAR_CO2
- MPV_ADDED = MPV_ADDED + MPV_MOIST_LOSS + MPV_VOLIT + MPV_CHAR_CO2
+ MPV_CHAR_O2_TOTAL    = MPV_CHAR_O2_TOTAL    + MPV_CHAR_O2
+ MPV_ADDED = MPV_ADDED + MPV_MOIST_LOSS + MPV_VOLIT + MPV_CHAR_CO2 - MPV_CHAR_O2
 
 ! Check if critical mass flux condition is met
 !IF (MPV_ADDED*RDT < VEG_CRITICAL_MASSSOURCE .AND. .NOT. LP%VEG_IGNITED) THEN
@@ -1181,7 +1185,6 @@ ENDDO TIME_SUBCYCLING_LOOP
 ! Add gas species created by degradation of vegetation Yi_new = (Yi_old*rho_old + change in rho_i)/rho_new
 ! Add water vapor mass from drying to water vapor mass fraction
   IF (I_WATER > 0) THEN 
-!  ZZ(II,JJ,KK,I_WATER) = (MPV_MOIST_LOSS + ZZ(II,JJ,KK,I_WATER)*RHO_GAS)/(MPV_MOIST_LOSS + RHO_GAS)
 !  ZZ(II,JJ,KK,I_WATER) = ZZ(II,JJ,KK,I_WATER) +  MPV_MOIST_LOSS*RRHO_GAS_NEW
    ZZ(II,JJ,KK,I_WATER) = ZZ(II,JJ,KK,I_WATER) + (MPV_MOIST_LOSS_TOTAL - MPV_ADDED*ZZ(II,JJ,KK,I_WATER))*RRHO_GAS_NEW
 !  ZZ(II,JJ,KK,I_WATER) = MIN(1._EB,ZZ(II,JJ,KK,I_WATER))
@@ -1191,17 +1194,22 @@ ENDDO TIME_SUBCYCLING_LOOP
 ! Add fuel vapor mass from pyrolysis to fuel mass fraction
   I_FUEL = REACTION(1)%FUEL_SMIX_INDEX
   IF (I_FUEL /= 0) THEN 
-!  ZZ(II,JJ,KK,I_FUEL) = (MPV_VOLIT + ZZ(II,JJ,KK,I_FUEL)*RHO_GAS)/(MPV_VOLIT + RHO_GAS)
 !  ZZ(II,JJ,KK,I_FUEL) = ZZ(II,JJ,KK,I_FUEL) + MPV_VOLIT*RRHO_GAS_NEW
    ZZ(II,JJ,KK,I_FUEL) = ZZ(II,JJ,KK,I_FUEL) + (MPV_VOLIT_TOTAL - MPV_ADDED*ZZ(II,JJ,KK,I_FUEL))*RRHO_GAS_NEW
 !  ZZ(II,JJ,KK,I_FUEL) = MIN(1._EB,ZZ(II,JJ,KK,I_FUEL))
 !  DMPVDT_FM_VEG(II,JJ,KK,I_FUEL) = DMPVDT_FM_VEG(II,JJ,KK,I_FUEL) + RDT*MPV_VOLIT
   ENDIF
 
-! Add CO2 vapor mass from char oxidation mass to CO2 mass fraction
+! Add CO2 mass, due to production during char oxidation, to CO2 mass fraction
   IF (I_CO2 /= -1 .AND. PC%VEG_CHAR_OXIDATION) THEN 
    ZZ(II,JJ,KK,I_CO2) = ZZ(II,JJ,KK,I_CO2) + (MPV_CHAR_CO2_TOTAL - MPV_ADDED*ZZ(II,JJ,KK,I_CO2))*RRHO_GAS_NEW
   ENDIF
+
+! Remove O2 from gas due to char oxidation
+ IF (PC%VEG_CHAR_OXIDATION) THEN 
+  ZZ(II,JJ,KK,O2_INDEX) = ZZ(II,JJ,KK,O2_INDEX) - (MPV_CHAR_O2_TOTAL - MPV_ADDED*ZZ(II,JJ,KK,I_CO2))*RRHO_GAS_NEW
+  ZZ(II,JJ,KK,O2_INDEX) = MAX(0.0_EB,ZZ(II,JJ,KK,O2_INDEX))
+ ENDIF
 
  ENDIF IF_NOT_IGNITOR2
 
@@ -1389,6 +1397,7 @@ VEG_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
   SF%VEG_FUEL_FLUX_L  = 0.0_EB
   WC%MASSFLUX(I_FUEL) = 0.0_EB 
   WC%QCONF           = 0.0_EB
+  WC%LSET_FIRE       = .FALSE.
   IF (I_WATER > 0) WC%MASSFLUX(I_WATER) = 0.0_EB
 
 ! Vegetation variables and minimum bounds
@@ -1943,10 +1952,12 @@ VEG_CLOCK_BC = T
 END SUBROUTINE BNDRY_VEG_MASS_ENERGY_TRANSFER
 !
 !************************************************************************************************
-!************************************************************************************************
+!
+!\/\/\////\/\/\/\/\/\/\\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+!\/\/\////\/\/\/\/\/\/\\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 SUBROUTINE INITIALIZE_LEVEL_SET_FIREFRONT(NM)
-!************************************************************************************************
-!************************************************************************************************
+!\/\/\////\/\/\/\/\/\/\\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+!\/\/\////\/\/\/\/\/\/\\\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 !
 ! Level set based modeling of fire front propatagion across terrain. 
 ! There are four implementations from the simplest in which the wind is constant
@@ -1956,12 +1967,11 @@ SUBROUTINE INITIALIZE_LEVEL_SET_FIREFRONT(NM)
 ! Issues:
 ! 1) Need to make level set computation mesh dependent so the the LS slice file
 !    is created only where fire is expected
-! 2) Need to make computation capable of running with multiple meshes and processors
 !
 !
 INTEGER, INTENT(IN) :: NM
 INTEGER :: I,IM1,IM2,IIG,IP1,IP2,IW,J,JJG,JM1,JP1,KKG
-REAL(EB) :: LX,SR_MAX,UMAX_LS,VMAX_LS
+REAL(EB) :: DPHIDOTU,LX,SR_MAX,UMAX_LS,VMAX_LS
 REAL(EB) :: G_EAST,G_WEST,G_SOUTH,G_NORTH
 REAL(EB) :: VERT_CANOPY_EXTENT
 
@@ -2116,7 +2126,7 @@ ENDIF
 LU_SLCF_LS(3) = GET_FILE_NUMBER()
 SMOKEVIEW_LABEL = 'LS ROS'
 SMOKEVIEW_BAR_LABEL = 'LS ROS'
-UNITS  = 'kW/m^2'
+UNITS  = 'm/s'
 IF(NMESHES  > 1) WRITE(FN_SLCF_LS(3),CFORM) TRIM(CHID),'_',NM,'_','lsros.sf'
 IF(NMESHES == 1) WRITE(FN_SLCF_LS(3),CFORM) TRIM(CHID),'_','lsros.sf'
 OPEN(LU_SLCF_LS(3),FILE=FN_SLCF_LS(3),FORM='UNFORMATTED',STATUS='REPLACE')
@@ -2145,7 +2155,7 @@ ENDIF
 LU_SLCF_LS(4) = GET_FILE_NUMBER()
 SMOKEVIEW_LABEL = 'LS FLI'
 SMOKEVIEW_BAR_LABEL = 'LS FLI'
-UNITS  = 'kW/m^2'
+UNITS  = 'kW/m'
 IF(NMESHES  > 1) WRITE(FN_SLCF_LS(4),CFORM) TRIM(CHID),'_',NM,'_','lsfli.sf'
 IF(NMESHES == 1) WRITE(FN_SLCF_LS(4),CFORM) TRIM(CHID),'_','lsfli.sf'
 OPEN(LU_SLCF_LS(4),FILE=FN_SLCF_LS(4),FORM='UNFORMATTED',STATUS='REPLACE')
@@ -2166,7 +2176,7 @@ IF (NM == 1) THEN !write to smv file
     WRITE(LU_SMV,'(A)')FN_SLCF_LS(4)
     WRITE(LU_SMV,'(A)') 'LS FLI'
     WRITE(LU_SMV,'(A)') 'LS FLI'
-    WRITE(LU_SMV,'(A)') 'kW/m^2'
+    WRITE(LU_SMV,'(A)') 'kW/m'
   ENDDO
 ENDIF
 
@@ -2421,8 +2431,14 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 
 ! Ignite landscape at user specified location if ignition is at time zero
   IF (SF%VEG_LSET_IGNITE_TIME == 0.0_EB) THEN 
+!print '(A,ES12.4,1x,3I)','veg:LS lset_ignite_time,iig,jjg ',sf%veg_lset_ignite_time,iig,jjg
     PHI_LS(IIG,JJG) = PHI_MAX_LS 
     BURN_TIME_LS(IIG,JJG) = 99999.0_EB
+!   IF (SF%HRRPUA > 0.0_EB) THEN !mimic burner
+!     WC%VEG_LSET_SURFACE_HEATFLUX = -SF%HRRPUA
+!     IF (VEG_LEVEL_SET_SURFACE_HEATFLUX) WC%QCONF = WC%VEG_LSET_SURFACE_HEATFLUX
+!     WC%LSET_FIRE = .TRUE.
+!   ENDIF
   ENDIF
 
 ! Wind field 
@@ -2474,6 +2490,10 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 
 !-- Cruz et al. crown fire head fire ROS model
     IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='CRUZ') THEN    
+! --- Compute dot product between normal to fireline and wind direction. If location on fire perimeter is between the flank
+!     and backing fires, then skip computation of crown fire ROS and use already computed surface fire ROS
+      DPHIDOTU = (PHI_LS(IIG,JJG) - PHI_LS(IIG-1,JJG))*U_LS(IIG,JJG) + (PHI_LS(IIG,JJG) - PHI_LS(IIG,JJG-1))*V_LS(IIG,JJG)
+!     IF (DPHIDOTU > 0.0_EB) CYCLE LSET_INIT_WALL_CELL_LOOP      
       VERT_CANOPY_EXTENT = SF%VEG_LSET_CANOPY_HEIGHT - SF%VEG_LSET_SURF_HEIGHT - SF%VEG_LSET_FUEL_STRATA_GAP
       CALL CRUZ_CROWN_FIRE_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_SURF_EFFM,            &
            SF%VEG_LSET_FUEL_STRATA_GAP,SF%VEG_LSET_SURF_LOAD,SF%VEG_LSET_CRUZ_PROB_PASSIVE,                         &
@@ -2946,7 +2966,7 @@ INTEGER :: IDUM,JDUM,KDUM,KGRID,KWIND
 REAL(EB) :: ARO,BURNTIME,BURNOUT_FCTR,BT,FIREBASE_TIME,FB_TIME_FCTR,FLI,HEAD_WIDTH_FCTR,GRIDCELL_FRACTION,GRIDCELL_TIME, &
             IGNITION_WIDTH_Y,ROS_FLANK1,ROS_MAG,R_BURNOUT_FCTR,SHF,TE_TIME_FACTOR,TIME_LS_LAST, &
             TOTAL_FUEL_LOAD,VERT_CANOPY_EXTENT
-REAL(EB) :: XI,YJ,ZK,RCP_GAS,TE_HRR_TOTAL
+REAL(EB) :: DPHIDOTU,XI,YJ,ZK,RCP_GAS,TE_HRR_TOTAL
 REAL(EB) :: PHI_CHECK,LSET_PHI_F,LSET_PHI_V
 REAL(FB) :: TIME_LS_OUT
 
@@ -2958,7 +2978,6 @@ TYPE (OMESH_TYPE),    POINTER :: OM =>NULL()
 TYPE (MESH_TYPE),     POINTER :: MM =>NULL()
 CALL POINT_TO_MESH(NM)
 
-!IF (NM /= 1) RETURN !no multiprocessor LS computation yet, all LS must be in mesh 1
 IF (.NOT. VEG_LEVEL_SET_UNCOUPLED .AND. .NOT. VEG_LEVEL_SET_COUPLED) RETURN
 
 !--- Initialize variables
@@ -3073,8 +3092,8 @@ DO WHILE (TIME_LS < T_FINAL)
   IF (WC%BOUNDARY_TYPE==NULL_BOUNDARY) CYCLE WALL_CELL_LOOP1
   SF  => SURFACE(WC%SURF_INDEX)
 
-  WC%QCONF    = 0.0_EB
-  WC%LSET_FIRE = .FALSE.
+  !WC%QCONF    = 0.0_EB
+  !WC%LSET_FIRE = .FALSE.
   II  = WC%II 
   JJ  = WC%JJ 
   KK  = WC%KK 
@@ -3088,10 +3107,20 @@ DO WHILE (TIME_LS < T_FINAL)
   IF (SF%VEG_LSET_IGNITE_TIME > 0.0_EB .AND. SF%VEG_LSET_IGNITE_TIME < DT_LS) THEN
     PHI_LS(IIG,JJG) = PHI_MAX_LS 
     BURN_TIME_LS(IIG,JJG) = 99999.0_EB
+!   IF (SF%HRRPUA > 0.0_EB) THEN !mimic burner
+!     WC%VEG_LSET_SURFACE_HEATFLUX = -SF%HRRPUA
+!     IF (VEG_LEVEL_SET_SURFACE_HEATFLUX) WC%QCONF = WC%VEG_LSET_SURFACE_HEATFLUX
+!     WC%LSET_FIRE = .TRUE.
+!   ENDIF
   ENDIF
   IF (SF%VEG_LSET_IGNITE_TIME >= TIME_LS .AND. SF%VEG_LSET_IGNITE_TIME <= TIME_LS + DT_LS) THEN 
     PHI_LS(IIG,JJG) = PHI_MAX_LS 
     BURN_TIME_LS(IIG,JJG) = 99999.0_EB
+!   IF (SF%HRRPUA > 0.0_EB) THEN !mimic burner
+!     WC%VEG_LSET_SURFACE_HEATFLUX = -SF%HRRPUA
+!     IF (VEG_LEVEL_SET_SURFACE_HEATFLUX) WC%QCONF = WC%VEG_LSET_SURFACE_HEATFLUX
+!     WC%LSET_FIRE = .TRUE.
+!   ENDIF
   ENDIF
 
   IF (.NOT. SF%VEG_LSET_SPREAD) CYCLE WALL_CELL_LOOP1
@@ -3107,21 +3136,26 @@ DO WHILE (TIME_LS < T_FINAL)
     IF_ELLIPSE: IF (SF%VEG_LSET_ELLIPSE) THEN
 
 !---Ellipse assumption with AU grassland head fire ROS for infinite head width
-      IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='AU GRASS') CALL AUGRASS_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_EFFM)
+      IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='AU GRASS' .AND. .NOT. SF%VEG_LSET_BURNER) CALL AUGRASS_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_EFFM)
 
 !---Ellipse assumption with Rothermel head fire ROS (== FARSITE)
-      IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROTHERMEL') THEN 
+      IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROTHERMEL' .AND. .NOT. SF%VEG_LSET_BURNER) THEN 
         CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_BETA,SF%VEG_LSET_SURF_HEIGHT,            &
            SF%VEG_LSET_CANOPY_HEIGHT,SF%VEG_LSET_SIGMA,SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS,SF%VEG_LSET_CROWN_VEG, &
            SF%VEG_LSET_WAF_UNSHELTERED,SF%VEG_LSET_WAF_SHELTERED)
       ENDIF
 
 !--- Cruz et al. crown fire head fire ROS model
-      IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='CRUZ') &
-        CALL CRUZ_CROWN_FIRE_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_SURF_EFFM,     &
-           SF%VEG_LSET_FUEL_STRATA_GAP,SF%VEG_LSET_SURF_LOAD,SF%VEG_LSET_CRUZ_PROB_PASSIVE,                    &
-           SF%VEG_LSET_CRUZ_PROB_ACTIVE,SF%VEG_LSET_CRUZ_PROB_CROWN,SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL,   &
-           VERT_CANOPY_EXTENT,SF%VEG_LSET_CANOPY_HEIGHT)
+      IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='CRUZ' .AND. .NOT. SF%VEG_LSET_BURNER) THEN
+! --- Compute dot product between normal to fireline and wind direction. If location on fire perimeter is between the flank
+!     and backing fires, then skip computation of crown fire ROS and use already computed surface fire ROS
+        DPHIDOTU = (PHI_LS(IIG,JJG) - PHI_LS(IIG-1,JJG))*U_LS(IIG,JJG) + (PHI_LS(IIG,JJG) - PHI_LS(IIG,JJG-1))*V_LS(IIG,JJG)
+!       IF (DPHIDOTU <= 0.0_EB) &     
+          CALL CRUZ_CROWN_FIRE_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_SURF_EFFM,     &
+             SF%VEG_LSET_FUEL_STRATA_GAP,SF%VEG_LSET_SURF_LOAD,SF%VEG_LSET_CRUZ_PROB_PASSIVE,                    &
+             SF%VEG_LSET_CRUZ_PROB_ACTIVE,SF%VEG_LSET_CRUZ_PROB_CROWN,SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL,   &
+             VERT_CANOPY_EXTENT,SF%VEG_LSET_CANOPY_HEIGHT)
+      ENDIF
 
     ENDIF IF_ELLIPSE
 
@@ -3142,7 +3176,7 @@ DO WHILE (TIME_LS < T_FINAL)
 !Determine surface heat flux for fire spread through grid cell. Account for fires with a depth that is smaller
 !than the grid cell (GRIDCELL_FRACTION). Also account for partial presence of fire base as fire spreads into 
 !and out of the grid cell (FB_TIME_FCTR).
-    IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH) THEN 
+    IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. SF%VEG_LSET_BURNER) THEN 
      WC%LSET_FIRE = .TRUE.
      TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
      SHF = SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD/FIREBASE_TIME
@@ -3158,14 +3192,13 @@ DO WHILE (TIME_LS < T_FINAL)
     ENDIF
 
 ! For mimicing a fixed burner using either thermal elements or surface heat flux after ignition time
-    IF (SF%HRRPUA > 0.0_EB .AND. PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH) THEN
-     WC%VEG_LSET_SURFACE_HEATFLUX = -SF%HRRPUA
-     WC%LSET_FIRE = .TRUE.
-    ENDIF
+!   IF (SF%HRRPUA > 0.0_EB .AND. PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH) THEN
+!    WC%VEG_LSET_SURFACE_HEATFLUX = -SF%HRRPUA
+!    WC%LSET_FIRE = .TRUE.
+!   ENDIF
      
 ! Stop burning if the fire front residence time is exceeded
     IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. WC%LSET_FIRE) THEN
-!   IF(BURN_TIME_LS(IIG,JJG) > BURNTIME) THEN
       WC%VEG_LSET_SURFACE_HEATFLUX = 0.0_EB
       WC%VEG_HEIGHT = 0.0_EB 
       BURN_TIME_LS(IIG,JJG) = 999999999._EB
@@ -3178,9 +3211,20 @@ DO WHILE (TIME_LS < T_FINAL)
 !    print '(A,2x,ES12.4)','phi_ls(x+dx,y)',phi_ls(iig+1,jjg)
 !endif
 
+!-- Burner placement
+    IF (SF%VEG_LSET_BURNER) THEN
+      IF (TIME_LS >= SF%VEG_LSET_BURNER_TIME_ON .AND. TIME_LS <= SF%VEG_LSET_BURNER_TIME_OFF) THEN
+        WC%VEG_LSET_SURFACE_HEATFLUX = -SF%HRRPUA
+        PHI_LS(IIG,JJG) = PHI_MAX_LS 
+        WC%LSET_FIRE = .TRUE.
+      ELSE
+        WC%VEG_LSET_SURFACE_HEATFLUX = 0.0_EB
+        WC%LSET_FIRE = .FALSE.
+      ENDIF
+    ENDIF
+
     IF (VEG_LEVEL_SET_SURFACE_HEATFLUX) WC%QCONF = WC%VEG_LSET_SURFACE_HEATFLUX
     IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) SF%DT_INSERT = DT_LS
-
 
 !---Drag constant can vary with height, if hveg > dzgrid
     VEG_DRAG(IIG,JJG,:) = 0.0_EB
@@ -3207,7 +3251,7 @@ DO WHILE (TIME_LS < T_FINAL)
     TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
     FLI = SQRT(SR_Y_LS(IIG,JJG)**2 + SR_X_LS(IIG,JJG)**2)*(SF%VEG_LSET_HEAT_OF_COMBUSTION*0.001_EB)* &
     (1.0_EB-SF%VEG_CHAR_FRACTION)*TOTAL_FUEL_LOAD
-    FLI_OUT(IIG,JJG) = FLI !kW/m^2
+    FLI_OUT(IIG,JJG) = FLI !kW/m
     CRUZ_CROWN_PROB_OUT(IIG,JJG) = CRUZ_CROWN_PROB(IIG,JJG)
   ENDIF
 
@@ -3236,7 +3280,8 @@ DO WHILE (TIME_LS < T_FINAL)
 !determining if fire residence time is shorter than a time step.
  CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM)
 
-! Account for heat released by thermal elements (if present). Thermal elements are inserted in part.f90
+! Account for heat released by thermal elements (if present). Thermal elements are inserted and
+! LP%LSET_HRRPUV is determined in part.f90
 IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
   RCP_GAS    = 0.001_EB !1/(J/kg/K)
   TE_HRR_TOTAL = 0.0_EB
@@ -3250,8 +3295,8 @@ IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
     TE_TIME_FACTOR = 1.0_EB - (T_FINAL-LP%T)/PC%TE_BURNTIME !linear decay with time
 !   TE_TIME_FACTOR = 1.0_EB !no decay with time
     TE_TIME_FACTOR = MAX(0.0_EB,TE_TIME_FACTOR)
+    PC%RGB = (/255,0,0/)
     IF(TE_TIME_FACTOR == 0.0_EB) PC%RGB = (/0,0,0/)
-    PC%RGB = (/0,0,0/)
     TE_HRR_TOTAL  = TE_HRR_TOTAL + TE_TIME_FACTOR*LP%LSET_HRRPUV*DX(II)*DY(JJ)*DZ(KK)
     D_LAGRANGIAN(II,JJ,KK) = D_LAGRANGIAN(II,JJ,KK)  +  &
                               TE_TIME_FACTOR*LP%LSET_HRRPUV*RCP_GAS/(RHO(II,JJ,KK)*TMP(II,JJ,KK))
@@ -4061,8 +4106,8 @@ IF (VEG_LEVEL_SET_COUPLED) RETURN
 
   PHI_CHECK_LS = MAXVAL(ABS(PHI_LS - PHI_TEMP_LS)) !Find max change in phi
 
-print '(A,1x,E13.5,1x,i3)','*************ls_dt,phi check,nm',phi_check_ls, nm !maxval(phi_Ls),nm
-print*,'ls_dt lset_ignition, nm',lset_ignition,nm
+!print '(A,1x,E13.5,1x,i3)','*************ls_dt,phi check,nm',phi_check_ls, nm !maxval(phi_Ls),nm
+!print*,'ls_dt lset_ignition, nm',lset_ignition,nm
 
  
 ! IF (LSET_IGNITION) THEN

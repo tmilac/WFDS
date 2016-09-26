@@ -591,7 +591,9 @@ WALL_INSERT_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 !print '(A,ES12.4)','surface_heatflux ',wc%veg_lset_surface_heatflux
 !print '(A,ES12.4)','dt_insert',sf%dt_insert
 !print '(A,ES12.4)','lifetime',pc%lifetime
+!print '(A,ES12.4)','burntime',pc%te_burntime
 !print '(A,ES12.4)','dz',dz(kk)
+!print '(A,I3)','Number particles',wc%nppcw
         LP%LSET_HRRPUV = -WC%VEG_LSET_SURFACE_HEATFLUX*SF%DT_INSERT/(0.5*PC%TE_BURNTIME*DZ(KK)*WC%NPPCW) !linear HRRPUV decay with time
 !       LP%LSET_HRRPUV = -WC%VEG_LSET_SURFACE_HEATFLUX*SF%DT_INSERT/(PC%TE_BURNTIME*DZ(KK)*WC%NPPCW) !no HRRPUV decay with time
 !print '(A,ES12.4)','hrrpuv',lp%lset_hrrpuv
