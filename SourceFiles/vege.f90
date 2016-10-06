@@ -2493,7 +2493,7 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 ! --- Compute dot product between normal to fireline and wind direction. If location on fire perimeter is between the flank
 !     and backing fires, then skip computation of crown fire ROS and use already computed surface fire ROS
       DPHIDOTU = (PHI_LS(IIG,JJG) - PHI_LS(IIG-1,JJG))*U_LS(IIG,JJG) + (PHI_LS(IIG,JJG) - PHI_LS(IIG,JJG-1))*V_LS(IIG,JJG)
-!     IF (DPHIDOTU > 0.0_EB) CYCLE LSET_INIT_WALL_CELL_LOOP      
+      IF (DPHIDOTU > 0.0_EB) CYCLE LSET_INIT_WALL_CELL_LOOP      
       VERT_CANOPY_EXTENT = SF%VEG_LSET_CANOPY_HEIGHT - SF%VEG_LSET_SURF_HEIGHT - SF%VEG_LSET_FUEL_STRATA_GAP
       CALL CRUZ_CROWN_FIRE_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_SURF_EFFM,            &
            SF%VEG_LSET_FUEL_STRATA_GAP,SF%VEG_LSET_SURF_LOAD,SF%VEG_LSET_CRUZ_PROB_PASSIVE,                         &
@@ -3150,11 +3150,12 @@ DO WHILE (TIME_LS < T_FINAL)
 ! --- Compute dot product between normal to fireline and wind direction. If location on fire perimeter is between the flank
 !     and backing fires, then skip computation of crown fire ROS and use already computed surface fire ROS
         DPHIDOTU = (PHI_LS(IIG,JJG) - PHI_LS(IIG-1,JJG))*U_LS(IIG,JJG) + (PHI_LS(IIG,JJG) - PHI_LS(IIG,JJG-1))*V_LS(IIG,JJG)
-!       IF (DPHIDOTU <= 0.0_EB) &     
+        IF (DPHIDOTU <= 0.0_EB) THEN  
           CALL CRUZ_CROWN_FIRE_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_SURF_EFFM,     &
              SF%VEG_LSET_FUEL_STRATA_GAP,SF%VEG_LSET_SURF_LOAD,SF%VEG_LSET_CRUZ_PROB_PASSIVE,                    &
              SF%VEG_LSET_CRUZ_PROB_ACTIVE,SF%VEG_LSET_CRUZ_PROB_CROWN,SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL,   &
              VERT_CANOPY_EXTENT,SF%VEG_LSET_CANOPY_HEIGHT)
+        ENDIF
       ENDIF
 
     ENDIF IF_ELLIPSE
