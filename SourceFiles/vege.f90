@@ -1971,7 +1971,7 @@ SUBROUTINE INITIALIZE_LEVEL_SET_FIREFRONT(NM)
 !
 INTEGER, INTENT(IN) :: NM
 INTEGER :: I,IM1,IM2,IIG,IP1,IP2,IW,J,JJG,JM1,JP1,KKG
-REAL(EB) :: DPHIDOTU,LX,SR_MAX,UMAX_LS,VMAX_LS
+REAL(EB) :: COSDPHIU,DPHIDX,DPHIDY,DPHIDOTU,LX,SR_MAX,UMAX_LS,VMAX_LS
 REAL(EB) :: G_EAST,G_WEST,G_SOUTH,G_NORTH
 REAL(EB) :: VERT_CANOPY_EXTENT
 
@@ -1994,7 +1994,7 @@ CALL POINT_TO_MESH(NM)
 
 ZT => LS_Z_TERRAIN
 
-print*,'vege: in initialize LS'
+!print*,'vege: in initialize LS'
 !WRITE(LU_OUTPUT,*)'level set: z(*)',z
 !WRITE(LU_OUTPUT,*)'level set: ls_z_terrain(1,1)',ls_z_terrain(:,100)
 !
@@ -2013,7 +2013,6 @@ print*,'vege: in initialize LS'
 SUMTIME_LS = 0.0_EB ! Used for time step output
 
 SUM_T_SLCF_LS = 0._EB
-!DT_LS = 0.1_EB
 DT_COEF = 0.5_EB
 TIME_FLANKFIRE_QUENCH = 20.0_EB !flankfire lifetime in seconds
 
@@ -2444,7 +2443,7 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 ! Wind field 
   U_LS(IIG,JJG) = U(IIG,JJG,KKG)
   V_LS(IIG,JJG) = V(IIG,JJG,KKG)
-!WRITE(LU_OUTPUT,*)'veg: u_ls(i,j)',u_ls(iig,jjg)
+!WRITE(LU_OUTPUT,*)'veg: u,v_ls(i,j)',u_ls(iig,jjg),v_ls(iig,jjg)
 
   IF (.NOT. SF%VEG_LSET_SPREAD) CYCLE LSET_INIT_WALL_CELL_LOOP
 !WRITE(LU_OUTPUT,*)'x,y,z and U,V',X(IIG),Y(JJG),Z(KKG),U(IIG,JJG,KKG),V(IIG,JJG,KKG)
@@ -2492,8 +2491,16 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
     IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='CRUZ') THEN    
 ! --- Compute dot product between normal to fireline and wind direction. If location on fire perimeter is between the flank
 !     and backing fires, then skip computation of crown fire ROS and use already computed surface fire ROS
-      DPHIDOTU = (PHI_LS(IIG,JJG) - PHI_LS(IIG-1,JJG))*U_LS(IIG,JJG) + (PHI_LS(IIG,JJG) - PHI_LS(IIG,JJG-1))*V_LS(IIG,JJG)
-      IF (DPHIDOTU > 0.0_EB) CYCLE LSET_INIT_WALL_CELL_LOOP      
+!     DPHIDX = PHI_LS(IIG,JJG) - PHI_LS(IIG-1,JJG)
+!     DPHIDY = PHI_LS(IIG,JJG) - PHI_LS(IIG  ,JJG-1)
+!     DPHIDOTU = DPHIDX*U_LS(IIG,JJG) + DPHIDY*V_LS(IIG,JJG)
+!     IF (DPHIDOTU == 0.0_EB) THEN
+!       COSDPHIU = 1._EB
+!     ELSE
+!       UMAG     = SQRT(U_LS(IIG,JJG)**2 + V_LS(IIG,JJG)**2)
+!       COSDPHIU = DPHIDOTU/UMAG 
+!     ENDIF
+!     IF (COSDPHIU >= -0.1_EB) CYCLE LSET_INIT_WALL_CELL_LOOP      
       VERT_CANOPY_EXTENT = SF%VEG_LSET_CANOPY_HEIGHT - SF%VEG_LSET_SURF_HEIGHT - SF%VEG_LSET_FUEL_STRATA_GAP
       CALL CRUZ_CROWN_FIRE_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_SURF_EFFM,            &
            SF%VEG_LSET_FUEL_STRATA_GAP,SF%VEG_LSET_SURF_LOAD,SF%VEG_LSET_CRUZ_PROB_PASSIVE,                         &
@@ -2519,23 +2526,27 @@ SR_MAX   = MAX(SR_MAX,MAXVAL(ROS_FLANK))
 DYN_SR_MAX = 0._EB
 
 ! Write diagnostic to standard output
-WRITE(LU_OUTPUT,*)'ROS_HEAD max',MAXVAL(ROS_HEAD)
-ROS_HEAD1 = MAXVAL(ROS_HEAD)
-WRITE(LU_OUTPUT,*)'ROS_HEAD1',ROS_HEAD1
+!WRITE(LU_OUTPUT,*)'ROS_HEAD max',MAXVAL(ROS_HEAD)
+!ROS_HEAD1 = MAXVAL(ROS_HEAD)
+!WRITE(LU_OUTPUT,*)'ROS_HEAD1',ROS_HEAD1
 
 IF (LSET_ELLIPSE) THEN
-    SR_MAX   = MAXVAL(ROS_HEAD) * (1._EB + MAXVAL(PHI_S) + MAXVAL(PHI_W)) 
+    SR_MAX = MAXVAL(ROS_HEAD)*(1._EB + MAXVAL(PHI_S) + MAXVAL(PHI_W)) 
+    ROS_HEAD1 = MAXVAL(ROS_HEAD_CROWN)
+    SR_MAX = MAX(SR_MAX,ROS_HEAD1)
+    WRITE(LU_OUTPUT,*)'Mesh number',NM
     WRITE(LU_OUTPUT,*)'Phi_S max',MAXVAL(PHI_S)
     WRITE(LU_OUTPUT,*)'Phi_W max',MAXVAL(PHI_W)
     WRITE(LU_OUTPUT,*)'UMF max',MAXVAL(UMF)
     WRITE(LU_OUTPUT,*)'Mag_zt max',MAXVAL(MAG_ZT)
     WRITE(LU_OUTPUT,*)'SR_MAX',SR_MAX
 ENDIF
+
 IF (.NOT. LSET_ELLIPSE) SR_MAX   = 2._EB*SR_MAX !rough accounting for upslope spread aligned with wind
 
-!DT_LS = 2._EB*MIN(DX(1),DY(1))/SR_MAX
 IF (VEG_LEVEL_SET_UNCOUPLED) THEN
- DT_LS = 2._EB*MIN(DX(1),DY(1))/SR_MAX
+ DT_LS = 0.5_EB*MIN(DX(1),DY(1))/SR_MAX
+ MESHES(NM)%DT = DT_LS
  DT      = DT_LS
  DT_NEXT = DT_LS
 ENDIF
@@ -2546,7 +2557,7 @@ LSET_PHI(0:IBP1,0:JBP1,1) = PHI_LS
 !DT_LS = 0.1603_EB !to make AU F19 ignition sequence work
 
 !WRITE(LU_OUTPUT,1113)nm,t_final,dt_ls
-WRITE(LU_OUTPUT,*)'flux limiter= ',LIMITER_LS
+!WRITE(LU_OUTPUT,*)'flux limiter= ',LIMITER_LS
 !1113 format('vegelsini nm,t_final,dt_ls',1(i2),2x,2(E12.4))
 
 END SUBROUTINE INITIALIZE_LEVEL_SET_FIREFRONT
@@ -2657,15 +2668,16 @@ ENDIF
 !Log profile based wind adjustiment for unsheltered or sheltered condtions are from 
 !Andrews 2012, USDA FS Gen Tech Rep. RMRS-GTR-266 (with added SI conversion)
 !When using Andrews log formula for sheltered wind the crown fill portion, f, is 0.2
-IF (.NOT. CROWN_VEG) THEN
+IF (CANOPY_VEG_HT == 0.0_EB) THEN
   WAF_MID = WAF_UNSHELTERED !WAF is from input file
   IF (WAF_UNSHELTERED == -99.0_EB) &
       WAF_MID=1.83_EB/LOG((20.0_EB + 1.18_EB*VEG_HT)/(0.43_EB*VEG_HT))!used in LS vs FS paper
-!     UMF = WAF_MID
+!if(x(i)==21 .and. y(j)==2) print '(A,2x,L2,1ES12.4)','----crown_veg, waf_mid =',crown_veg,waf_mid
 ELSE
   WAF_MID = WAF_SHELTERED !WAF is from input file
   IF (WAF_SHELTERED == -99.0_EB)   &
       WAF_MID=0.555_EB/(SQRT(0.20_EB*3.28_EB*VEG_HT)*LOG((20.0_EB + 1.18_EB*VEG_HT)/(0.43_EB*VEG_HT)))
+!if(x(i)==21 .and. y(j)==2) print '(A,2x,L2,1ES12.4)','++++crown_veg, waf_mid =',crown_veg,waf_mid
 ENDIF
 
 !if (i==41 .and. j==41) then
@@ -2763,22 +2775,36 @@ SUBROUTINE AUGRASS_HEADROS(NM,I,J,K,VEG_MOIST)
 INTEGER,  INTENT(IN) :: I,J,K,NM
 REAL(EB), INTENT(IN) :: VEG_MOIST
 INTEGER :: KDUM,KWIND
-REAL(EB) :: UMAG,UMF_TMP,VEG_HT
+REAL(EB) :: U2MH,UMAG,UMF_TMP,V2MH,VEG_HT
+LOGICAL  :: UNIFORM_UV
 
+UNIFORM_UV = .FALSE.
+
+!Find the wind components at 2 m above the ground for the case of a uniform
+!wind field (i.e., equivalent to conventional FARSITE). 
+!N_CSVF = 0 when no initial wind field has been read in from a file.
+IF (N_CSVF == 0 .AND. VEG_LEVEL_SET_UNCOUPLED) THEN
+  U2MH = U_LS(I,J) 
+  V2MH = V_LS(I,J)
+  UNIFORM_UV = .TRUE.
+ENDIF
+
+IF (UNIFORM_UV) THEN
 !Find k array index corresponding to ~6.1 m AGL height to determine midflame wind
-KWIND = 0
-KDUM  = K
-DO WHILE (ZC(KDUM)-ZC(K) <= 6.1_EB)
-  KWIND = KDUM
-  KDUM  = KDUM + 1
-ENDDO
-IF (ZC(KBAR) < 6.1_EB) KWIND=1
+  KWIND = 0
+  KDUM  = K
+  DO WHILE (ZC(KDUM)-ZC(K) <= 6.1_EB)
+    KWIND = KDUM
+    KDUM  = KDUM + 1
+  ENDDO
+  IF (ZC(KBAR) < 6.1_EB) KWIND=1
 
 !Factor to obtain the wind at midflame height (UMF) based on the wind at 6.1 m AGL.  
 !From Andrews 2012, USDA FS Gen Tech Rep. RMRS-GTR-266 (with added SI conversion)
-UMF_TMP = 1.83_EB / LOG((20.0_EB + 1.18_EB * VEG_HT) /(0.43_EB * VEG_HT))
-UMF_X(I,J) = UMF_TMP * U(I,J,KWIND)
-UMF_Y(I,J) = UMF_TMP * V(I,J,KWIND)
+  UMF_TMP = 1.83_EB / LOG((20.0_EB + 1.18_EB * VEG_HT) /(0.43_EB * VEG_HT))
+  UMF_X(I,J) = UMF_TMP * U(I,J,KWIND)
+  UMF_Y(I,J) = UMF_TMP * V(I,J,KWIND)
+ENDIF
 
 !Theta_elps, after adjustment below, is angle of direction (0 to 2pi) of highest spread rate
 !0<=theta_elps<=2pi as measured clockwise from Y-axis. ATAN2(y,x) is the angle, measured in the
@@ -2786,7 +2812,8 @@ UMF_Y(I,J) = UMF_TMP * V(I,J,KWIND)
 !positive x-axis  
 
 !Note, unlike the Rothermel ROS case, the slope is assumed to be zero at this point.
-THETA_ELPS(I,J) = ATAN2(UMF_Y(I,J),UMF_X(I,J))
+!THETA_ELPS(I,J) = ATAN2(UMF_Y(I,J),UMF_X(I,J))
+THETA_ELPS(I,J) = ATAN2(V2MH,U2MH)
         
 !The following two lines convert ATAN2 output to compass system (0 to 2 pi CW from +Y-axis)
 THETA_ELPS(I,J) = PIO2 - THETA_ELPS(I,J)
@@ -2794,7 +2821,8 @@ IF (THETA_ELPS(I,J) < 0.0_EB) THETA_ELPS(I,J) = 2.0_EB*PI + THETA_ELPS(I,J)
 
 !AU grassland head ROS for infinite head width; See Mell et al. "A physics-based approach to 
 !modeling grassland fires" Intnl. J. Wildland Fire, 16:1-22 (2007)
-UMAG = SQRT(UMF_X(I,J)**2 + UMF_Y(I,J)**2)
+!UMAG = SQRT(UMF_X(I,J)**2 + UMF_Y(I,J)**2)
+UMAG = SQRT(U2MH**2 + V2MH**2)
 ROS_HEAD(I,J)  = (0.165_EB + 0.534_EB*UMAG)*EXP(-0.108*VEG_MOIST)
 
 END SUBROUTINE AUGRASS_HEADROS
@@ -2834,7 +2862,7 @@ FCTR1 = 0.64_EB*VEG_HT !constant in logrithmic wind profile Albini & Baughman IN
 !                       !Andrews RMRS-GTR-266 2012 (p. 8, Eq. 4)
 FCTR2 = 1.0_EB/(0.13_EB*VEG_HT) !constant in log wind profile
 Z10PH  = 10.0_EB + VEG_HT
-ZWFDS = ZC(K) - Z(K-1) !Height of velocity in first cell above veg, ZC(K)=cell center, Z(K-1)=height of K cell bottom
+ZWFDS = ZC(K) - Z(K-1) !Height of velocity in first cell above terrain, ZC(K)=cell center, Z(K-1)=height of K cell bottom
 UNIFORM_UV = .FALSE.
 !
 !Find the wind components at 10 m above the vegetation for the case of a uniform
@@ -2890,11 +2918,11 @@ UMAG = SQRT(U10PH**2 + V10PH**2)*MPS_TO_KPH !wind magnitude at 10 m above canopy
 !positive x-axis  
 
 !Note, unlike the Rothermel ROS case, the slope is assumed to be zero at this point.
-THETA_ELPS(I,J) = ATAN2(V10PH,U10PH)
+!THETA_ELPS(I,J) = ATAN2(V10PH,U10PH)
         
 !The following two lines convert ATAN2 output to compass system (0 to 2 pi CW from +Y-axis)
-THETA_ELPS(I,J) = PIO2 - THETA_ELPS(I,J)
-IF (THETA_ELPS(I,J) < 0.0_EB) THETA_ELPS(I,J) = 2.0_EB*PI + THETA_ELPS(I,J)
+!THETA_ELPS(I,J) = PIO2 - THETA_ELPS(I,J)
+!IF (THETA_ELPS(I,J) < 0.0_EB) THETA_ELPS(I,J) = 2.0_EB*PI + THETA_ELPS(I,J)
 
 !Probability of crowning
 GMAX = 4.236_EB + 0.357_EB*UMAG - 0.71_EB*FSG - 0.331*EFFM 
@@ -2914,10 +2942,12 @@ MIMIC_CRUZ_METHOD: IF (PROB_CROWN <= 1._EB) THEN
     CRLOAD = CBD*VERT_CANOPY_EXTENT
     CAC = CROSA*CBD/3._EB
     IF (CAC >= 1._EB) THEN
-      ROS_HEAD(I,J) = CROSA*MPM_TO_MPS !convert m/min to m/s
+      ROS_HEAD_CROWN(I,J) = CROSA*MPM_TO_MPS !convert m/min to m/s
+      ROS_HEAD(I,J) = ROS_HEAD_CROWN(I,J)
       CFB_LS(I,J) = CRLOAD
     ELSE
-      ROS_HEAD(I,J) = CROSP*MPM_TO_MPS
+      ROS_HEAD_CROWN(I,J) = CROSP*MPM_TO_MPS
+      ROS_HEAD(I,J) = ROS_HEAD_CROWN(I,J)
       CFB_LS(I,J) = CRLOAD*MAX(1.0_EB, (PROB - PROB_CROWN)/(1._EB - PROB_CROWN))
     ENDIF
   ENDIF
@@ -2926,10 +2956,19 @@ ENDIF MIMIC_CRUZ_METHOD
 PROB_MIN_MAX_METHOD: IF (PROB_CROWN > 1._EB)  THEN !use 
 !Compute head fire rate of spread 
   IF (PROB < PROB_PASSIVE) THEN
-   IF(SURFACE_FIRE_HEAD_ROS_MODEL .EQ. 'CRUZ') ROS_HEAD(I,J) = CROSP*MPM_TO_MPS !else use surface ROS specified in input file
+    IF(SURFACE_FIRE_HEAD_ROS_MODEL .EQ. 'CRUZ') THEN
+      ROS_HEAD_CROWN(I,J) = CROSP*MPM_TO_MPS !else use surface ROS specified in input file
+      ROS_HEAD(I,J) = ROS_HEAD_CROWN(I,J)
+    ENDIF
   ENDIF
-  IF (PROB >= PROB_PASSIVE .AND. PROB < PROB_ACTIVE) ROS_HEAD(I,J) = CROSP*MPM_TO_MPS 
-  IF (PROB >= PROB_ACTIVE)                           ROS_HEAD(I,J) = CROSA*MPM_TO_MPS
+  IF (PROB >= PROB_PASSIVE .AND. PROB < PROB_ACTIVE) THEN
+    ROS_HEAD_CROWN(I,J) = CROSP*MPM_TO_MPS 
+    ROS_HEAD(I,J) = ROS_HEAD_CROWN(I,J)
+  ENDIF
+  IF (PROB >= PROB_ACTIVE) THEN
+    ROS_HEAD_CROWN(I,J) = CROSA*MPM_TO_MPS
+    ROS_HEAD(I,J) = ROS_HEAD_CROWN(I,J)
+  ENDIF
 
 !Compute crown fraction burned (kg/m^2) for use in QCONF (heat input to atmosphere)
   CFB_LS(I,J) = 0.0_EB
@@ -2964,9 +3003,9 @@ INTEGER :: J_FLANK,I,II,IIG,IIO,IOR,IPC,IW,J,JJ,JJG,JJO,KK,KKG,KKO,NOM
 INTEGER :: IDUM,JDUM,KDUM,KGRID,KWIND
 !LOGICAL :: IGNITION = .FALSE.
 REAL(EB) :: ARO,BURNTIME,BURNOUT_FCTR,BT,FIREBASE_TIME,FB_TIME_FCTR,FLI,HEAD_WIDTH_FCTR,GRIDCELL_FRACTION,GRIDCELL_TIME, &
-            IGNITION_WIDTH_Y,ROS_FLANK1,ROS_MAG,R_BURNOUT_FCTR,SHF,TE_TIME_FACTOR,TIME_LS_LAST, &
+            IGNITION_WIDTH_Y,RFIREBASE_TIME,RGRIDCELL_TIME,ROS_FLANK1,ROS_MAG,R_BURNOUT_FCTR,SHF,TE_TIME_FACTOR,TIME_LS_LAST, &
             TOTAL_FUEL_LOAD,VERT_CANOPY_EXTENT
-REAL(EB) :: DPHIDOTU,XI,YJ,ZK,RCP_GAS,TE_HRR_TOTAL
+REAL(EB) :: COSDPHIU,DPHIDX,DPHIDY,DPHIDOTU,XI,YJ,ZK,RCP_GAS,TE_HRR_TOTAL
 REAL(EB) :: PHI_CHECK,LSET_PHI_F,LSET_PHI_V
 REAL(FB) :: TIME_LS_OUT
 
@@ -2995,11 +3034,8 @@ IF (VEG_LEVEL_SET_COUPLED) THEN
 ENDIF
 
 IF (VEG_LEVEL_SET_UNCOUPLED) THEN
- DT_LS   = MESHES(NM)%DT
-!DT_LS   = MIN(MESHES(NM)%DT,DT_LS_UNCOUPLED)
-!dt_ls = 0.001_EB
  TIME_LS = T_CFD
- T_FINAL = TIME_LS + DT_LS
+ T_FINAL = TIME_LS + DT_LS !DT_LS is set in initialization subroutine
 ENDIF
 
 !IF (NM==1) WRITE(LU_OUTPUT,'(A,1(I2),2x,3(E12.4))')'vege: nm,dt_ls,time_ls,t_final',nm,dt_ls,time_ls,t_final
@@ -3073,15 +3109,15 @@ DO WHILE (TIME_LS < T_FINAL)
  TIME_LS_LAST = TIME_LS
 
 !----------------- Output time steps with increasing step (as in FDS)-------------------------
- IF ( (TIME_LS<=10.0_EB) .OR. (SUMTIME_LS > 100.0_EB) ) THEN
-  SUMTIME_LS = 0._EB
-  WRITE(LU_OUTPUT,*)'vege:LS:-------------------------------------'
-  WRITE(LU_OUTPUT,*)'vege:LS:time_ls',time_ls
-  WRITE(LU_OUTPUT,*)'vege:ls:dt',dt_ls
+!IF ( (TIME_LS<=10.0_EB) .OR. (SUMTIME_LS > 100.0_EB) ) THEN
+! SUMTIME_LS = 0._EB
+! WRITE(LU_OUTPUT,*)'vege:LS:-------------------------------------'
+! WRITE(LU_OUTPUT,*)'vege:LS:time_ls',time_ls
+! WRITE(LU_OUTPUT,*)'vege:ls:dt',dt_ls
 ! WRITE(LU_OUTPUT,*)'vege:LS:HW,ros_h',head_width(nx_ls/2,ny_ls/2),ros_head(nx_ls/2,ny_ls/2)
 ! WRITE(LU_OUTPUT,*)'vege:LS:ros_f',ros_flank(nx_ls/2,ny_ls/2)
-  WRITE(LU_OUTPUT,*)'vege:LS:max_ros for time stepping',dyn_sr_max
- ENDIF
+! WRITE(LU_OUTPUT,*)'vege:LS:max_ros for time stepping',dyn_sr_max
+!ENDIF
 !------------------------------------------------------------------------------------------------
 
 !print*,'vege: ros_head',ros_head
@@ -3125,6 +3161,35 @@ DO WHILE (TIME_LS < T_FINAL)
 
   IF (.NOT. SF%VEG_LSET_SPREAD) CYCLE WALL_CELL_LOOP1
 
+! --- Compute dot product between normal to fireline and wind direction. If location on fire perimeter is between the flank
+!     and backing fires, then skip computation of crown fire ROS and use already computed surface fire ROS
+
+  IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='CRUZ' .AND. VEG_LEVEL_SET_UNCOUPLED) THEN
+
+    CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_BETA,SF%VEG_LSET_SURF_HEIGHT,            &
+      SF%VEG_LSET_CANOPY_HEIGHT,SF%VEG_LSET_SIGMA,SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS,SF%VEG_LSET_CROWN_VEG, &
+      SF%VEG_LSET_WAF_UNSHELTERED,SF%VEG_LSET_WAF_SHELTERED)
+
+    DPHIDX = PHI_LS(IIG,JJG) - PHI_LS(IIG-1,JJG)
+    DPHIDY = PHI_LS(IIG,JJG) - PHI_LS(IIG  ,JJG-1)
+    DPHIDOTU = DPHIDX*U(IIG,JJG,KKG) + DPHIDY*V(IIG,JJG,KKG)
+    IF (DPHIDOTU == 0.0_EB) THEN
+      COSDPHIU = 1._EB
+    ELSE
+      UMAG     = SQRT(U(IIG,JJG,KKG)**2 + V(IIG,JJG,KKG)**2)
+      COSDPHIU = DPHIDOTU/UMAG 
+    ENDIF
+    IF (COSDPHIU < -0.1_EB) THEN  
+      VERT_CANOPY_EXTENT = SF%VEG_LSET_CANOPY_HEIGHT - SF%VEG_LSET_SURF_HEIGHT - SF%VEG_LSET_FUEL_STRATA_GAP
+      CALL CRUZ_CROWN_FIRE_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_SURF_EFFM,     &
+             SF%VEG_LSET_FUEL_STRATA_GAP,SF%VEG_LSET_SURF_LOAD,SF%VEG_LSET_CRUZ_PROB_PASSIVE,                    &
+             SF%VEG_LSET_CRUZ_PROB_ACTIVE,SF%VEG_LSET_CRUZ_PROB_CROWN,SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL,   &
+             VERT_CANOPY_EXTENT,SF%VEG_LSET_CANOPY_HEIGHT)
+    ENDIF
+
+  ENDIF
+
+
 !
 !****** Update quantities used in the spread rate computation if the Level Set and CFD computation are coupled.
 !
@@ -3149,8 +3214,17 @@ DO WHILE (TIME_LS < T_FINAL)
       IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='CRUZ' .AND. .NOT. SF%VEG_LSET_BURNER) THEN
 ! --- Compute dot product between normal to fireline and wind direction. If location on fire perimeter is between the flank
 !     and backing fires, then skip computation of crown fire ROS and use already computed surface fire ROS
-        DPHIDOTU = (PHI_LS(IIG,JJG) - PHI_LS(IIG-1,JJG))*U_LS(IIG,JJG) + (PHI_LS(IIG,JJG) - PHI_LS(IIG,JJG-1))*V_LS(IIG,JJG)
-        IF (DPHIDOTU <= 0.0_EB) THEN  
+        DPHIDX = PHI_LS(IIG,JJG) - PHI_LS(IIG-1,JJG)
+        DPHIDY = PHI_LS(IIG,JJG) - PHI_LS(IIG  ,JJG-1)
+        DPHIDOTU = DPHIDX*U_LS(IIG,JJG) + DPHIDY*V_LS(IIG,JJG)
+        IF (DPHIDOTU == 0.0_EB) THEN
+          COSDPHIU = 1._EB
+        ELSE
+          UMAG     = SQRT(U_LS(IIG,JJG)**2 + V_LS(IIG,JJG)**2)
+          COSDPHIU = DPHIDOTU/UMAG 
+        ENDIF
+        IF (COSDPHIU < -0.1_EB) THEN  
+          VERT_CANOPY_EXTENT = SF%VEG_LSET_CANOPY_HEIGHT - SF%VEG_LSET_SURF_HEIGHT - SF%VEG_LSET_FUEL_STRATA_GAP
           CALL CRUZ_CROWN_FIRE_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_SURF_EFFM,     &
              SF%VEG_LSET_FUEL_STRATA_GAP,SF%VEG_LSET_SURF_LOAD,SF%VEG_LSET_CRUZ_PROB_PASSIVE,                    &
              SF%VEG_LSET_CRUZ_PROB_ACTIVE,SF%VEG_LSET_CRUZ_PROB_CROWN,SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL,   &
@@ -3161,12 +3235,14 @@ DO WHILE (TIME_LS < T_FINAL)
     ENDIF IF_ELLIPSE
 
 !--- Compute heat flux into atmosphere
-    GRIDCELL_TIME = 0.0_EB
-    FIREBASE_TIME = BURNOUT_FCTR*0.01_EB/SF%VEG_LSET_SIGMA !0.01 converts SIGMA from cm (needed for FARSITE) to m
+    GRIDCELL_TIME  = 0.0_EB
+    FIREBASE_TIME  = BURNOUT_FCTR*0.01_EB/SF%VEG_LSET_SIGMA !0.01 converts SIGMA from cm (needed for FARSITE) to m
+    RFIREBASE_TIME = 1.0_EB/FIREBASE_TIME
     ROS_MAG = SQRT(SR_X_LS(IIG,JJG)**2 + SR_Y_LS(IIG,JJG)**2)
     IF(ROS_MAG > 0.0_EB) THEN
       GRIDCELL_TIME = SQRT(DX(IIG)**2 + DY(JJG)**2)/ROS_MAG
-      GRIDCELL_FRACTION = MIN(1.0_EB,FIREBASE_TIME/GRIDCELL_TIME) !assumes spread direction parallel to grid axes
+      RGRIDCELL_TIME = 1.0_EB/GRIDCELL_TIME
+      GRIDCELL_FRACTION = MIN(1.0_EB,FIREBASE_TIME*RGRIDCELL_TIME) !assumes spread direction parallel to grid axes
     ENDIF
     BURNTIME = MAX(FIREBASE_TIME,GRIDCELL_TIME) !assumes spread direction parallel to grid axes
 
@@ -3177,26 +3253,54 @@ DO WHILE (TIME_LS < T_FINAL)
 !Determine surface heat flux for fire spread through grid cell. Account for fires with a depth that is smaller
 !than the grid cell (GRIDCELL_FRACTION). Also account for partial presence of fire base as fire spreads into 
 !and out of the grid cell (FB_TIME_FCTR).
-    IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. SF%VEG_LSET_BURNER) THEN 
-     WC%LSET_FIRE = .TRUE.
-     TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
-     SHF = SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD/FIREBASE_TIME
-     SHF = SHF*GRIDCELL_FRACTION !needed when grid cell > firedepth
-     FB_TIME_FCTR = 1.0_EB
-     IF (0.0_EB        <= BT .AND. BT <= FIREBASE_TIME) FB_TIME_FCTR = BT/FIREBASE_TIME
-     IF (GRIDCELL_TIME <  BT .AND. BT <= GRIDCELL_TIME + FIREBASE_TIME) FB_TIME_FCTR = &
-       1.0_EB - (BT - GRIDCELL_TIME)/FIREBASE_TIME
-     IF (BT > GRIDCELL_TIME + FIREBASE_TIME) WC%LSET_FIRE = .FALSE.
-     WC%VEG_HEIGHT = SF%VEG_LSET_SURF_HEIGHT*(1._EB - BT)/FIREBASE_TIME
-     BURN_TIME_LS(IIG,JJG) = BURN_TIME_LS(IIG,JJG) + DT_LS
-     WC%VEG_LSET_SURFACE_HEATFLUX = -SHF*FB_TIME_FCTR
-    ENDIF
 
-! For mimicing a fixed burner using either thermal elements or surface heat flux after ignition time
-!   IF (SF%HRRPUA > 0.0_EB .AND. PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH) THEN
-!    WC%VEG_LSET_SURFACE_HEATFLUX = -SF%HRRPUA
-!    WC%LSET_FIRE = .TRUE.
-!   ENDIF
+    IF_FIRELINE_PASSAGE: IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. SF%VEG_LSET_BURNER) THEN 
+      WC%LSET_FIRE = .TRUE.
+      TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
+      SHF = (1.0_EB-SF%VEG_CHAR_FRACTION)*SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD/FIREBASE_TIME
+!Grid cell > fire depth      
+      IF (GRIDCELL_FRACTION < 1.0_EB) THEN
+        SHF = SHF*GRIDCELL_FRACTION
+        FB_TIME_FCTR = 1.0_EB
+        IF (0.0_EB        <= BT .AND. BT <= FIREBASE_TIME) FB_TIME_FCTR = BT*RFIREBASE_TIME
+        IF (GRIDCELL_TIME <  BT .AND. BT <= GRIDCELL_TIME + FIREBASE_TIME) FB_TIME_FCTR = &
+          1.0_EB - (BT - GRIDCELL_TIME)*RFIREBASE_TIME
+        IF (BT > GRIDCELL_TIME + FIREBASE_TIME) WC%LSET_FIRE = .FALSE.
+        WC%VEG_HEIGHT = SF%VEG_LSET_SURF_HEIGHT*(1._EB - BT/(FIREBASE_TIME+GRIDCELL_TIME))
+        BURN_TIME_LS(IIG,JJG) = BURN_TIME_LS(IIG,JJG) + DT_LS
+
+!if(x(iig)==21 .and. y(jjg)==2) then 
+!   print '(A,2x,7ES12.4)','----time dtdx<=dtdtfb, ros, bt, gct, fbt, fctr, shf =',t_cfd,ros_mag,bt,gridcell_time,firebase_time,fb_time_fctr,-shf*0.001_EB
+!   print '(A,2x,4ES12.4,L2)','----time dtdx>dtfb, shf kW/m2, fb_time_fctr, cell fract, lset_fire =',t_cfd,-shf*0.001_EB,fb_time_fctr, &
+!                              gridcell_fraction,wc%lset_fire
+!   print '(A,2x,7ES12.4)','ros, hcomb, fuel load, fbt, cfb, probcruz, probin',ros_mag,sf%veg_lset_heat_of_combustion,total_fuel_load,  &
+!                              firebase_time,cfb_ls(iig,jjg),CRUZ_CROWN_PROB(IIG,JJG),sf%veg_lset_cruz_prob_crown
+!endif
+        WC%VEG_LSET_SURFACE_HEATFLUX = -SHF*FB_TIME_FCTR
+      ENDIF
+
+!Grid cell <= fire depth      
+      IF (GRIDCELL_FRACTION >= 1.0_EB) THEN
+        FB_TIME_FCTR = 1.0_EB
+        IF (0.0_EB        <= BT .AND. BT <= GRIDCELL_TIME) FB_TIME_FCTR = BT*RGRIDCELL_TIME
+        IF (FIREBASE_TIME <  BT .AND. BT <= GRIDCELL_TIME + FIREBASE_TIME) FB_TIME_FCTR = &
+          1.0_EB - (BT - FIREBASE_TIME)*RGRIDCELL_TIME
+        IF (BT > GRIDCELL_TIME + FIREBASE_TIME) WC%LSET_FIRE = .FALSE.
+        WC%VEG_HEIGHT = SF%VEG_LSET_SURF_HEIGHT*(1._EB - BT/(FIREBASE_TIME+GRIDCELL_TIME))
+        BURN_TIME_LS(IIG,JJG) = BURN_TIME_LS(IIG,JJG) + DT_LS
+
+!if(x(iig)==21 .and. y(jjg)==2) then 
+!   print '(A,2x,7ES12.4)','++++time dtdx<=dtdtfb, ros, bt, gct, fbt, fctr, shf =',t_cfd,ros_mag,bt,gridcell_time,firebase_time,fb_time_fctr,-shf*0.001_EB
+!   print '(A,2x,4ES12.4,L2)','++++time dtdx<=dtdtfb, shf kW/m2, fb_time_fctr, cell fract, lset_fire =',t_cfd,-shf*0.001_EB,fb_time_fctr, &
+!                              gridcell_fraction,wc%lset_fire
+!   print '(A,2x,7ES12.4)','ros, hcomb, fuel load, fbt, cfb, probcruz, probin',ros_mag,sf%veg_lset_heat_of_combustion,total_fuel_load,  &
+!                              firebase_time,cfb_ls(iig,jjg),CRUZ_CROWN_PROB(IIG,JJG),sf%veg_lset_cruz_prob_crown
+!endif
+        WC%VEG_LSET_SURFACE_HEATFLUX = -SHF*FB_TIME_FCTR
+      ENDIF
+
+    ENDIF IF_FIRELINE_PASSAGE
+
      
 ! Stop burning if the fire front residence time is exceeded
     IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. WC%LSET_FIRE) THEN
@@ -3402,7 +3506,7 @@ ENDDO !While loop
 !CLOSE(LU_SLCF_LS)
 
 ! ******  Write arrays to ascii file **************
-IF (VEG_LEVEL_SET_UNCOUPLED) THEN
+IF (VEG_LEVEL_SET_UNCOUPLED .AND. NM == 1) THEN
  CALL CPU_TIME(CPUTIME)
  LS_T_END = CPUTIME
  WRITE(LU_OUTPUT,*)'Uncoupled Level Set CPU Time: ',LS_T_END - LS_T_BEG
