@@ -72,7 +72,7 @@ IF (FN_INPUT(1:1)==' ') THEN
    IF (MYID==0) THEN
       WRITE(LU_ERR,'(A,I4)') "SVN Revision Number: ",SVN_REVISION_NUMBER
 !     WRITE(LU_ERR,'(A,A)') "Compile Date: ",TRIM(COMPILE_DATE)
-      WRITE(LU_ERR,'(/A)')  "WFDS, October 14, 2016; based on subversion 9977 of FDS"
+      WRITE(LU_ERR,'(/A)')  "WFDS, October 20, 2016; based on subversion 9977 of FDS"
       WRITE(LU_ERR,'(/A)')  "Consult FDS Users Guide Chapter, Running FDS, for further instructions."
       WRITE(LU_ERR,'(/A)')  "Consult https://sites.google.com/site/wuifiresfiremodels, for WFDS information."
       WRITE(LU_ERR,'(/A)')  "Hit Enter to Escape..."
@@ -3231,7 +3231,7 @@ READ_PART_LOOP: DO N=1,N_PART
    VEG_BETA_CHAR            = 0.2_EB !Porterie to account for blowing in char ox
    VEG_NU_O2_CHAR           = 1.65 !Porterie
    VEG_NDT_SUBCYCLES        = 1 !number of veg time iterations within the gas phase time step
-   TE_BURNTIME              = 0.0_EB !thermal element burntime
+   TE_BURNTIME              = 2.0_EB !thermal element burntime
 
 
    ! Read the PART line from the input file or set up special PARTICLE_CLASS class for water PARTICLEs or tracers
