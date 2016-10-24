@@ -72,7 +72,7 @@ IF (FN_INPUT(1:1)==' ') THEN
    IF (MYID==0) THEN
       WRITE(LU_ERR,'(A,I4)') "SVN Revision Number: ",SVN_REVISION_NUMBER
 !     WRITE(LU_ERR,'(A,A)') "Compile Date: ",TRIM(COMPILE_DATE)
-      WRITE(LU_ERR,'(/A)')  "WFDS, October 20, 2016; based on subversion 9977 of FDS"
+      WRITE(LU_ERR,'(/A)')  "WFDS, October 24, 2016; based on subversion 9977 of FDS"
       WRITE(LU_ERR,'(/A)')  "Consult FDS Users Guide Chapter, Running FDS, for further instructions."
       WRITE(LU_ERR,'(/A)')  "Consult https://sites.google.com/site/wuifiresfiremodels, for WFDS information."
       WRITE(LU_ERR,'(/A)')  "Hit Enter to Escape..."
@@ -3465,6 +3465,7 @@ READ_PART_LOOP: DO N=1,N_PART
    PC%VEG_NU_O2_CHAR           = VEG_NU_O2_CHAR 
    PC%VEG_NDT_SUBCYCLES        = VEG_NDT_SUBCYCLES
    PC%TE_BURNTIME              = TE_BURNTIME !thermal element burn time, s
+   PC%LIFETIME                 = MAX(PC%TE_BURNTIME,PC%LIFETIME) !don't remove a TE before it's burned out 
 
    ! Set evaporation index
 
