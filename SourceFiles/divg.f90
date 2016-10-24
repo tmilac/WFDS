@@ -640,15 +640,15 @@ ENDIF
 
 ! Add contribution of thermal elements for Level Set fire front propagation
 
-IF (VEG_LEVEL_SET_COUPLED .AND. VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
-   DO K=1,KBAR
-      DO J=1,JBAR
-         DO I=1,IBAR
-            DP(I,J,K) = DP(I,J,K) + D_LAGRANGIAN(I,J,K)
-         ENDDO
-      ENDDO
-   ENDDO
-ENDIF
+!IF (VEG_LEVEL_SET_COUPLED .AND. VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
+!   DO K=1,KBAR
+!      DO J=1,JBAR
+!         DO I=1,IBAR
+!            DP(I,J,K) = DP(I,J,K) + D_LAGRANGIAN(I,J,K)
+!         ENDDO
+!      ENDDO
+!   ENDDO
+!ENDIF
  
 ! Atmospheric Stratification Term
 
