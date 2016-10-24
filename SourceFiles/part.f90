@@ -583,7 +583,7 @@ WALL_INSERT_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
          MASS_SUM = MASS_SUM + LP%PWT*PC%FTPR*LP%R**3
       ENDIF
 
-! Determine HRRPUV of thermal element
+! Determine initial HRRPUV of thermal element to be inserted
       IF (WC%LSET_FIRE .AND. VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
         LP%LSET_THERMAL_ELEMENT = .TRUE.
 !       LP%LSET_HRRPUV = 0.1_EB !W/m^3
@@ -594,8 +594,8 @@ WALL_INSERT_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 !print '(A,ES12.4)','burntime',pc%te_burntime
 !print '(A,ES12.4)','dz',dz(kk)
 !print '(A,I3)','Number particles',wc%nppcw
-        LP%LSET_HRRPUV = -WC%VEG_LSET_SURFACE_HEATFLUX*SF%DT_INSERT/(0.5*PC%TE_BURNTIME*DZ(KK)*WC%NPPCW) !linear HRRPUV decay with time
-!       LP%LSET_HRRPUV = -WC%VEG_LSET_SURFACE_HEATFLUX*SF%DT_INSERT/(PC%TE_BURNTIME*DZ(KK)*WC%NPPCW) !no HRRPUV decay with time
+!       LP%LSET_HRRPUV = -WC%VEG_LSET_SURFACE_HEATFLUX*SF%DT_INSERT/(0.5*PC%TE_BURNTIME*DZ(KK)*WC%NPPCW) !linear HRRPUV decay with time
+        LP%LSET_HRRPUV = -WC%VEG_LSET_SURFACE_HEATFLUX*SF%DT_INSERT/(PC%TE_BURNTIME*DZ(KK)*WC%NPPCW) !no HRRPUV decay with time
 !print '(A,ES12.4)','hrrpuv',lp%lset_hrrpuv
       ENDIF
 
@@ -840,7 +840,7 @@ ENDIF
 
 !Thermal elements for Level Set fire front propagation
 
-IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) D_LAGRANGIAN = 0._EB
+!IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) D_LAGRANGIAN = 0._EB
 
 ! Move the PARTICLEs/particles, then compute mass and energy transfer, then add PARTICLE momentum to gas
 
