@@ -269,13 +269,16 @@ TREE_LOOP: DO NCT=1,N_TREES
 !print 1113,treexs,treexf,treeys,treeyf,treezs,treezf
 !1113 format('vege',2x,6(E12.4))
 
-     DO NZB=0,KBAR-1
+    DO NZB=0,KBAR-1
 ! -- Check if veg is present in cell NXB,NYB,NZB (it may occupy only a portion of the cell)
       IF (Z(NZB+1) > TREEZS .AND. TREEZF > Z(NZB)) THEN
         DO NYB = 0,JBAR-1
           IF (Y(NYB+1) > TREEYS .AND. TREEYF > Y(NYB)) THEN
             DO NXB = 0,IBAR-1
               IF (X(NXB+1) > TREEXS .AND. TREEXF > X(NXB)) THEN
+!  print*,'NM',nm
+!  print '(A,2x,2ES12.4)','x(nb+1), xs',x(nxb+1),treexs
+!  print '(A,2x,2ES12.4)','xf  ,x(nxb)',treexf,x(nxb)
                 NLP  = NLP + 1
                 NLP_RECT_VEG = NLP_RECT_VEG + 1
                 IF (NLP>NLPDIM) THEN
@@ -666,7 +669,7 @@ TMP_CHAR_MAX = 1300._EB !K
 !!NU_ASH_VEG     = 0.1_EB
 !NU_O2_CHAR_VEG = 1.65_EB
 
-CP_ASH         = 800._EB !J/kg/K
+!CP_ASH         = 800._EB !J/kg/K
 
 !Kinetic constants used by Morvan and Porterie mostly obtained from Grishin
 !H_PYR_VEG      = 418000._EB !J/kg 
@@ -727,18 +730,19 @@ PARTICLE_LOOP: DO I=1,NLP
  FCTR_RDT_CYCLES  = REAL(NDT_CYCLES,EB)
 
 ! Intialize quantities
- LP%VEG_MLR     = 0.0_EB
- Q_VEG_CHAR     = 0.0_EB
- Q_VEG_MOIST    = 0.0_EB
- Q_VEG_VOLIT    = 0.0_EB
- Q_UPTO_VOLIT   = 0.0_EB
- Q_VOLIT        = 0.0_EB
- MPV_MOIST_LOSS = 0.0_EB
- MPV_CHAR_LOSS  = 0.0_EB
- MPV_CHAR_CO2   = 0.0_EB
- MPV_CHAR_O2    = 0.0_EB
- MPV_VOLIT      = 0.0_EB
- MPV_ADDED      = 0.0_EB
+ LP%VEG_MLR      = 0.0_EB
+ LP%VEG_Q_CHAROX = 0.0_EB
+ Q_VEG_CHAR      = 0.0_EB
+ Q_VEG_MOIST     = 0.0_EB
+ Q_VEG_VOLIT     = 0.0_EB
+ Q_UPTO_VOLIT    = 0.0_EB
+ Q_VOLIT         = 0.0_EB
+ MPV_MOIST_LOSS  = 0.0_EB
+ MPV_CHAR_LOSS   = 0.0_EB
+ MPV_CHAR_CO2    = 0.0_EB
+ MPV_CHAR_O2     = 0.0_EB
+ MPV_VOLIT       = 0.0_EB
+ MPV_ADDED       = 0.0_EB
  MW_VEG_MOIST_TERM = 0.0_EB
  MW_VEG_VOLIT_TERM = 0.0_EB
  CP_VEG_FUEL_AND_CHAR_MASS = 0.0_EB
@@ -823,6 +827,7 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
  TMP_GMV  = TMP_GAS - TMP_VEG
  CP_VEG   = (0.01_EB + 0.0037_EB*TMP_VEG)*1000._EB !J/kg/K Ritchie IAFSS 1997:177-188
  CP_CHAR  = 420._EB + 2.09_EB*TMP_VEG + 6.85E-4_EB*TMP_VEG**2 !J/kg/K Park etal. C&F 2010 147:481-494
+ CP_ASH   = 1244._EB*(TMP_VEG/TMPA)**0.315 !J/kg/K Lautenberger & Fernandez-Pell, C&F 2009 156:1503-1513
 
 ! Divergence of convective and radiative heat fluxes
 !print*,'---- NM=',NM
@@ -1105,7 +1110,8 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
      ENDIF IF_CHAR_OXIDATION
 
      Q_VEG_CHAR        = MPV_CHAR_LOSS*H_CHAR_VEG 
-     Q_VEG_CHAR_TOTAL  = Q_VEG_CHAR_TOTAL + Q_VEG_CHAR
+     LP%VEG_Q_CHAROX   = -Q_VEG_CHAR*RDT
+     Q_VEG_CHAR_TOTAL  =  Q_VEG_CHAR_TOTAL + Q_VEG_CHAR
      TMP_VEG_NEW  = TMP_VEG_NEW - (MPV_MOIST_LOSS*H_VAP_H2O + MPV_VOLIT*H_PYR_VEG + & 
                                   PC%VEG_CHAR_ENTHALPY_FRACTION*Q_VEG_CHAR) / &
                                  (LP%VEG_MOIST_MASS*CP_H2O + CP_MASS_VEG_SOLID)
@@ -1235,8 +1241,8 @@ ENDDO TIME_SUBCYCLING_LOOP
   TREE_OUTPUT_DATA(N_TREE,2,NM) = TREE_OUTPUT_DATA(N_TREE,2,NM) + TMP_GAS - 273._EB !C
   TREE_OUTPUT_DATA(N_TREE,3,NM) = TREE_OUTPUT_DATA(N_TREE,3,NM) + LP%VEG_FUEL_MASS*V_CELL*VEG_VF !kg
   TREE_OUTPUT_DATA(N_TREE,4,NM) = TREE_OUTPUT_DATA(N_TREE,4,NM) + LP%VEG_MOIST_MASS*V_CELL*VEG_VF !kg
-  TREE_OUTPUT_DATA(N_TREE,5,NM) = TREE_OUTPUT_DATA(N_TREE,5,NM) + LP%VEG_CHAR_MASS*V_CELL !kg
-  TREE_OUTPUT_DATA(N_TREE,6,NM) = TREE_OUTPUT_DATA(N_TREE,6,NM) + LP%VEG_ASH_MASS*V_CELL !kg
+  TREE_OUTPUT_DATA(N_TREE,5,NM) = TREE_OUTPUT_DATA(N_TREE,5,NM) + LP%VEG_CHAR_MASS*V_CELL*VEG_VF !kg
+  TREE_OUTPUT_DATA(N_TREE,6,NM) = TREE_OUTPUT_DATA(N_TREE,6,NM) + LP%VEG_ASH_MASS*V_CELL*VEG_VF !kg
   TREE_OUTPUT_DATA(N_TREE,7,NM) = TREE_OUTPUT_DATA(N_TREE,7,NM) + LP%VEG_DIVQC*V_CELL*0.001_EB !kW
   TREE_OUTPUT_DATA(N_TREE,8,NM) = TREE_OUTPUT_DATA(N_TREE,8,NM) + LP%VEG_DIVQR*V_CELL*0.001_EB !kW
   TREE_OUTPUT_DATA(N_TREE,9,NM) = TREE_OUTPUT_DATA(N_TREE,9,NM) + 1._EB !number of particles
