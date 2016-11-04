@@ -2157,7 +2157,7 @@ IF (NM == 1) THEN !write to smv file
   ENDDO
 ENDIF
 
-!--Fire line intensity for animation in Smokeview
+!--Fire line intensity at time of fire arrival for animation in Smokeview
 LU_SLCF_LS(4) = GET_FILE_NUMBER()
 SMOKEVIEW_LABEL = 'LS FLI'
 SMOKEVIEW_BAR_LABEL = 'LS FLI'
@@ -2186,16 +2186,16 @@ IF (NM == 1) THEN !write to smv file
   ENDDO
 ENDIF
 
-!--Crown Fire Probablity (Cruz & Alexander) for animation in Smokeview
+!--HRRPUA at all output times for animation in Smokeview
+IF (VEG_LEVEL_SET_COUPLED) THEN
+
 LU_SLCF_LS(5) = GET_FILE_NUMBER()
-!print*,'vege initls: nm,lu_slcf_ls(5)',nm,lu_slcf_ls(5)
-SMOKEVIEW_LABEL = 'LS ProbCrown'
-SMOKEVIEW_BAR_LABEL = 'LS ProbCrown'
-UNITS  = '-'
-IF(NMESHES  > 1) WRITE(FN_SLCF_LS(5),CFORM) TRIM(CHID),'_',NM,'_','lsprobc.sf'
-IF(NMESHES == 1) WRITE(FN_SLCF_LS(5),CFORM) TRIM(CHID),'_','lsprobc.sf'
+SMOKEVIEW_LABEL = 'LS HRRPUA'
+SMOKEVIEW_BAR_LABEL = 'LS HRRPUA'
+UNITS  = 'kW/m^2'
+IF(NMESHES  > 1) WRITE(FN_SLCF_LS(5),CFORM) TRIM(CHID),'_',NM,'_','lshrrpua.sf'
+IF(NMESHES == 1) WRITE(FN_SLCF_LS(5),CFORM) TRIM(CHID),'_','lshrrpua.sf'
 OPEN(LU_SLCF_LS(5),FILE=FN_SLCF_LS(5),FORM='UNFORMATTED',STATUS='REPLACE')
-!OPEN(LU_SLCF_PROBC_LS,FILE=TRIM(CHID)//'_lsprobc.sf',FORM='UNFORMATTED',STATUS='REPLACE')
 WRITE(LU_SLCF_LS(5)) SMOKEVIEW_LABEL(1:30)
 WRITE(LU_SLCF_LS(5)) SMOKEVIEW_LABEL(1:30)
 WRITE(LU_SLCF_LS(5)) UNITS(1:30)
@@ -2204,12 +2204,42 @@ WRITE(LU_SLCF_LS(5))0,IBAR,0,JBAR,1,1
 IF (NM == 1) THEN !write to smv file
   DO I=1,NMESHES 
     IF (NMESHES == 1) THEN
-      WRITE(FN_SLCF_LS(5),CFORM) TRIM(CHID),'_','lsprobc.sf'
+      WRITE(FN_SLCF_LS(5),CFORM) TRIM(CHID),'_','lshrrpua.sf'
     ELSE
-      WRITE(FN_SLCF_LS(5),CFORM) TRIM(CHID),'_',I,'_','lsprobc.sf'
+      WRITE(FN_SLCF_LS(5),CFORM) TRIM(CHID),'_',I,'_','lshrrpua.sf'
     ENDIF
     WRITE(LU_SMV,'(A,5X,I3,5X,F7.2)') 'SLCT ',I,0.1
     WRITE(LU_SMV,'(A)')FN_SLCF_LS(5)
+    WRITE(LU_SMV,'(A)') 'LS HRRPUA'
+    WRITE(LU_SMV,'(A)') 'LS HRRPUA'
+    WRITE(LU_SMV,'(A)') 'kW/m^2'
+  ENDDO
+ENDIF
+
+ENDIF
+
+!--Crown Fire Probablity (Cruz & Alexander) for animation in Smokeview
+LU_SLCF_LS(6) = GET_FILE_NUMBER()
+SMOKEVIEW_LABEL = 'LS ProbCrown'
+SMOKEVIEW_BAR_LABEL = 'LS ProbCrown'
+UNITS  = '-'
+IF(NMESHES  > 1) WRITE(FN_SLCF_LS(6),CFORM) TRIM(CHID),'_',NM,'_','lsprobc.sf'
+IF(NMESHES == 1) WRITE(FN_SLCF_LS(6),CFORM) TRIM(CHID),'_','lsprobc.sf'
+OPEN(LU_SLCF_LS(6),FILE=FN_SLCF_LS(6),FORM='UNFORMATTED',STATUS='REPLACE')
+WRITE(LU_SLCF_LS(6)) SMOKEVIEW_LABEL(1:30)
+WRITE(LU_SLCF_LS(6)) SMOKEVIEW_LABEL(1:30)
+WRITE(LU_SLCF_LS(6)) UNITS(1:30)
+WRITE(LU_SLCF_LS(6))0,IBAR,0,JBAR,1,1
+
+IF (NM == 1) THEN !write to smv file
+  DO I=1,NMESHES 
+    IF (NMESHES == 1) THEN
+      WRITE(FN_SLCF_LS(6),CFORM) TRIM(CHID),'_','lsprobc.sf'
+    ELSE
+      WRITE(FN_SLCF_LS(6),CFORM) TRIM(CHID),'_',I,'_','lsprobc.sf'
+    ENDIF
+    WRITE(LU_SMV,'(A,5X,I3,5X,F7.2)') 'SLCT ',I,0.1
+    WRITE(LU_SMV,'(A)')FN_SLCF_LS(6)
     WRITE(LU_SMV,'(A)') 'LS PROBCROWN'
     WRITE(LU_SMV,'(A)') 'LS PROBCROWN'
     WRITE(LU_SMV,'(A)') '-'
@@ -3295,14 +3325,21 @@ DO WHILE (TIME_LS < T_FINAL)
         WC%VEG_LSET_SURFACE_HEATFLUX = -SHF*FB_TIME_FCTR
       ENDIF
 
+      HRRPUA_OUT(IIG,JJG) = -WC%VEG_LSET_SURFACE_HEATFLUX 
+
     ENDIF IF_FIRELINE_PASSAGE
 
      
 ! Stop burning if the fire front residence time is exceeded
     IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. WC%LSET_FIRE) THEN
-      WC%VEG_LSET_SURFACE_HEATFLUX = 0.0_EB
-      WC%VEG_HEIGHT = 0.0_EB 
-      BURN_TIME_LS(IIG,JJG) = 999999999._EB
+      IF(.NOT. WC%LSET_FIRE) THEN
+        WC%VEG_LSET_SURFACE_HEATFLUX = 0.0_EB
+        WC%VEG_HEIGHT = 0.0_EB 
+        BURN_TIME_LS(IIG,JJG) = 999999999._EB
+        HRRPUA_OUT(IIG,JJG) = 0.0_EB
+      ELSE
+        HRRPUA_OUT(IIG,JJG) = -WC%VEG_LSET_SURFACE_HEATFLUX*0.001_EB !kW/m^2
+      ENDIF
     ENDIF
 
 !if(x(iig)==29 .and. y(jjg)==1) then 
@@ -3345,13 +3382,13 @@ DO WHILE (TIME_LS < T_FINAL)
   ENDIF IF_CFD_COUPLED
 
 ! Save Time of Arrival (TOA), Rate of Spread components, Fireline Intensity, etc.
-  IF (PHI_LS(IIG,JJG)>=-SF%VEG_LSET_PHIDEPTH .AND. TOA(IIG,JJG)<=-1.0_EB) THEN 
+  IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. TOA(IIG,JJG) <= -1.0_EB) THEN 
     TOA(IIG,JJG)=TIME_LS
     ROS_X_OUT(IIG,JJG) = SR_X_LS(IIG,JJG)
     ROS_Y_OUT(IIG,JJG) = SR_Y_LS(IIG,JJG)
     TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
     FLI = SQRT(SR_Y_LS(IIG,JJG)**2 + SR_X_LS(IIG,JJG)**2)*(SF%VEG_LSET_HEAT_OF_COMBUSTION*0.001_EB)* &
-    (1.0_EB-SF%VEG_CHAR_FRACTION)*TOTAL_FUEL_LOAD
+         (1.0_EB-SF%VEG_CHAR_FRACTION)*TOTAL_FUEL_LOAD
     FLI_OUT(IIG,JJG) = FLI !kW/m
     CRUZ_CROWN_PROB_OUT(IIG,JJG) = CRUZ_CROWN_PROB(IIG,JJG)
   ENDIF
@@ -3482,15 +3519,21 @@ ENDIF
   ROS_X_OUT(0,0:JBAR) = ROS_X_OUT(1,0:JBAR) ; ROS_X_OUT(0:IBAR,0) = ROS_X_OUT(0:IBAR,1)
   ROS_Y_OUT(0,0:JBAR) = ROS_Y_OUT(1,0:JBAR) ; ROS_Y_OUT(0:IBAR,0) = ROS_Y_OUT(0:IBAR,1)
   WRITE(LU_SLCF_LS(3)) ((SQRT(ROS_X_OUT(I,J)**2 + ROS_Y_OUT(I,J)**2),I=0,IBAR),J=0,JBAR) 
-!-- Fireline intensity, kW/m^2
+!-- Fireline intensity at time of fire arrival, kW/m^2
   WRITE(LU_SLCF_LS(4)) TIME_LS_OUT
   FLI_OUT(0,0:JBAR) = FLI_OUT(1,0:JBAR) ; FLI_OUT(0:IBAR,0) = FLI_OUT(0:IBAR,1) !for Smokeview
   WRITE(LU_SLCF_LS(4)) ((FLI_OUT(I,J),I=0,IBAR),J=0,JBAR) 
+!-- HRRPUA at every slice output time, kW/m^2
+  IF (VEG_LEVEL_SET_COUPLED) THEN
+    WRITE(LU_SLCF_LS(5)) TIME_LS_OUT
+    HRRPUA_OUT(0,0:JBAR) = HRRPUA_OUT(1,0:JBAR) ; HRRPUA_OUT(0:IBAR,0) = HRRPUA_OUT(0:IBAR,1) !for Smokeview
+    WRITE(LU_SLCF_LS(5)) ((HRRPUA_OUT(I,J),I=0,IBAR),J=0,JBAR) 
+  ENDIF
 !-- Crown fire Probability (Cruz & Alexancer)
-  WRITE(LU_SLCF_LS(5)) TIME_LS_OUT
+  WRITE(LU_SLCF_LS(6)) TIME_LS_OUT
   CRUZ_CROWN_PROB_OUT(0,0:JBAR) = CRUZ_CROWN_PROB_OUT(1,0:JBAR) !for Smokeview
   CRUZ_CROWN_PROB_OUT(0:IBAR,0) = CRUZ_CROWN_PROB_OUT(0:IBAR,1) !for Smokeview
-  WRITE(LU_SLCF_LS(5)) ((CRUZ_CROWN_PROB_OUT(I,J),I=0,IBAR),J=0,JBAR) 
+  WRITE(LU_SLCF_LS(6)) ((CRUZ_CROWN_PROB_OUT(I,J),I=0,IBAR),J=0,JBAR) 
  ENDIF
 !
 ENDDO !While loop
