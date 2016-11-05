@@ -3164,7 +3164,6 @@ DO WHILE (TIME_LS < T_FINAL)
   KKG = WC%KKG
   IOR = WC%IOR
   
-
 !-Ignite landscape at user specified location(s) and time(s)
   IF (SF%VEG_LSET_IGNITE_TIME > 0.0_EB .AND. SF%VEG_LSET_IGNITE_TIME < DT_LS) THEN
     PHI_LS(IIG,JJG) = PHI_MAX_LS 
@@ -3280,7 +3279,10 @@ DO WHILE (TIME_LS < T_FINAL)
 !than the grid cell (GRIDCELL_FRACTION). Also account for partial presence of fire base as fire spreads into 
 !and out of the grid cell (FB_TIME_FCTR).
 
+    HRRPUA_OUT(IIG,JJG) = 0.001_EB !kW/m^2 
+
     IF_FIRELINE_PASSAGE: IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. SF%VEG_LSET_BURNER) THEN 
+
       WC%LSET_FIRE = .TRUE.
       TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
       SHF = (1.0_EB-SF%VEG_CHAR_FRACTION)*SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD/FIREBASE_TIME
@@ -3325,21 +3327,16 @@ DO WHILE (TIME_LS < T_FINAL)
         WC%VEG_LSET_SURFACE_HEATFLUX = -SHF*FB_TIME_FCTR
       ENDIF
 
-      HRRPUA_OUT(IIG,JJG) = -WC%VEG_LSET_SURFACE_HEATFLUX 
+      IF (WC%LSET_FIRE) HRRPUA_OUT(IIG,JJG) = -WC%VEG_LSET_SURFACE_HEATFLUX*0.001_EB !kW/m^2 for Smokeview output
 
     ENDIF IF_FIRELINE_PASSAGE
 
      
 ! Stop burning if the fire front residence time is exceeded
     IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. WC%LSET_FIRE) THEN
-      IF(.NOT. WC%LSET_FIRE) THEN
         WC%VEG_LSET_SURFACE_HEATFLUX = 0.0_EB
         WC%VEG_HEIGHT = 0.0_EB 
         BURN_TIME_LS(IIG,JJG) = 999999999._EB
-        HRRPUA_OUT(IIG,JJG) = 0.0_EB
-      ELSE
-        HRRPUA_OUT(IIG,JJG) = -WC%VEG_LSET_SURFACE_HEATFLUX*0.001_EB !kW/m^2
-      ENDIF
     ENDIF
 
 !if(x(iig)==29 .and. y(jjg)==1) then 

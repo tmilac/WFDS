@@ -72,7 +72,7 @@ IF (FN_INPUT(1:1)==' ') THEN
    IF (MYID==0) THEN
       WRITE(LU_ERR,'(A,I4)') "SVN Revision Number: ",SVN_REVISION_NUMBER
 !     WRITE(LU_ERR,'(A,A)') "Compile Date: ",TRIM(COMPILE_DATE)
-      WRITE(LU_ERR,'(/A)')  "WFDS, November 3, 2016; based on subversion 9977 of FDS"
+      WRITE(LU_ERR,'(/A)')  "WFDS, November 4, 2016; based on subversion 9977 of FDS"
       WRITE(LU_ERR,'(/A)')  "Consult FDS Users Guide Chapter, Running FDS, for further instructions."
       WRITE(LU_ERR,'(/A)')  "Consult https://sites.google.com/site/wuifiresfiremodels, for WFDS information."
       WRITE(LU_ERR,'(/A)')  "Hit Enter to Escape..."
