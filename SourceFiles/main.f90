@@ -403,8 +403,9 @@ ENDIF
 ! Potentially read data from a previous calculation 
  
 DO NM=1,NMESHES
-   IF (RESTART .AND. PROCESS(NM)==MYID) CALL READ_RESTART(T(NM),NM)
+  IF (RESTART .AND. PROCESS(NM)==MYID) CALL READ_RESTART(T(NM),NM)
 ENDDO
+
 CALL MPI_BARRIER(MPI_COMM_WORLD, IERR)
  
 ! Initialize output files containing global data (Master Node Only)
