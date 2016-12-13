@@ -205,6 +205,7 @@ TYPE SURFACE_TYPE
    
    !Veg SAV and height (fuel depth) for Farsite emulation
    REAL(EB) :: VEG_LSET_SIGMA,VEG_LSET_SURF_HEIGHT,VEG_LSET_BETA
+   REAL(EB) :: VEG_LSET_FIREBASE_TIME !for LS4 
    
    ! Unstructured geometry
    CHARACTER(60) :: BC_FILENAME='null'
