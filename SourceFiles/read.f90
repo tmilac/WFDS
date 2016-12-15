@@ -1725,6 +1725,7 @@ DT_VEG       = -1._EB
 DT_OUTPUT_LS = -1._EB
  
 ! Read the DUMP line
+lasdkj
 
 REWIND(LU_INPUT)
 DUMP_LOOP: DO 
