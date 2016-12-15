@@ -2572,9 +2572,6 @@ DYN_SR_MAX = 0._EB
 !WRITE(LU_OUTPUT,*)'ROS_HEAD1',ROS_HEAD1
 
 IF (LSET_ELLIPSE) THEN
-    SR_MAX = MAXVAL(ROS_HEAD)*(1._EB + MAXVAL(PHI_S) + MAXVAL(PHI_W)) 
-    ROS_HEAD1 = MAXVAL(ROS_HEAD_CROWN)
-    SR_MAX = MAX(SR_MAX,ROS_HEAD1)
     WRITE(LU_OUTPUT,*)'Mesh number',NM
     WRITE(LU_OUTPUT,*)'Phi_S max',MAXVAL(PHI_S)
     WRITE(LU_OUTPUT,*)'Phi_W max',MAXVAL(PHI_W)
@@ -2587,6 +2584,7 @@ IF (.NOT. LSET_ELLIPSE) SR_MAX   = 2._EB*SR_MAX !rough accounting for upslope sp
 
 IF (VEG_LEVEL_SET_UNCOUPLED) THEN
  DT_LS = 0.5_EB*MIN(DX(1),DY(1))/SR_MAX
+!DT_LS = MESHES(NM)%DT
  MESHES(NM)%DT = DT_LS
  DT      = DT_LS
  DT_NEXT = DT_LS
@@ -2597,9 +2595,9 @@ LSET_PHI(0:IBP1,0:JBP1,1) = PHI_LS
 
 !DT_LS = 0.1603_EB !to make AU F19 ignition sequence work
 
-!WRITE(LU_OUTPUT,1113)nm,t_final,dt_ls
+WRITE(LU_OUTPUT,1113)nm,dt_ls
+1113 format('vegelsini nm, dt_ls ',1(i2),2x,1(ES12.4))
 !WRITE(LU_OUTPUT,*)'flux limiter= ',LIMITER_LS
-!1113 format('vegelsini nm,t_final,dt_ls',1(i2),2x,2(E12.4))
 
 END SUBROUTINE INITIALIZE_LEVEL_SET_FIREFRONT
 
@@ -3074,8 +3072,9 @@ IF (VEG_LEVEL_SET_COUPLED) THEN
 ENDIF
 
 IF (VEG_LEVEL_SET_UNCOUPLED) THEN
+ DT_LS   = MESHES(NM)%DT
  TIME_LS = T_CFD
- T_FINAL = TIME_LS + DT_LS !DT_LS is set in initialization subroutine
+ T_FINAL = TIME_LS + DT_LS 
 ENDIF
 
 !IF (NM==1) WRITE(LU_OUTPUT,'(A,1(I2),2x,3(E12.4))')'vege: nm,dt_ls,time_ls,t_final',nm,dt_ls,time_ls,t_final
@@ -3579,11 +3578,11 @@ ENDDO !While loop
 !CLOSE(LU_SLCF_LS)
 
 ! ******  Write arrays to ascii file **************
-IF (VEG_LEVEL_SET_UNCOUPLED .AND. NM == 1) THEN
- CALL CPU_TIME(CPUTIME)
- LS_T_END = CPUTIME
- WRITE(LU_OUTPUT,*)'Uncoupled Level Set CPU Time: ',LS_T_END - LS_T_BEG
-ENDIF
+!IF (VEG_LEVEL_SET_UNCOUPLED .AND. NM == 1) THEN
+! CALL CPU_TIME(CPUTIME)
+! LS_T_END = CPUTIME
+! WRITE(LU_OUTPUT,*)'Uncoupled Level Set CPU Time: ',LS_T_END - LS_T_BEG
+!ENDIF
 !
 !-- Output time of arrival
 !LU_TOA_LS = GET_FILE_NUMBER()
