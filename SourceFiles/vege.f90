@@ -2975,14 +2975,31 @@ CROSP = CROSA*EXP(-0.3333_EB*CROSA*CBD)
 MIMIC_CRUZ_METHOD: IF (PROB_CROWN <= 1._EB) THEN
 !Compute ROS if crown fire exists
   IF(PROB >= PROB_CROWN) THEN
+
+!Theta_elps, after adjustment below, is angle of direction (0 to 2pi) of highest spread rate
+!0<=theta_elps<=2pi as measured clockwise from Y-axis. ATAN2(y,x) is the angle, measured in the
+!counterclockwise direction, between the positive x-axis and the line through (0,0) and (x,y)
+!positive x-axis  
+
+!Note, unlike the Rothermel ROS case, the slope is assumed to be zero at this point so the direction
+!of local spread is dependent only on the wind direction.
+!This means there is an inconsistency in the handling of the direction of spread in portions of the 
+!fireline where PROB >= PROB_CROWN versus PROB < PROB_CROWN. In the latter case the influence of the
+!slope on the local direction of spread is accounted for and wil be based on the Rothermel ROS_HEAD.
+THETA_ELPS(I,J) = ATAN2(V10PH,U10PH)
+        
+!The following two lines convert ATAN2 output to compass system (0 to 2 pi CW from +Y-axis)
+THETA_ELPS(I,J) = PIO2 - THETA_ELPS(I,J)
+IF (THETA_ELPS(I,J) < 0.0_EB) THETA_ELPS(I,J) = 2.0_EB*PI + THETA_ELPS(I,J)
+
     CFB_LS(I,J) = 0.0_EB
     CRLOAD = CBD*VERT_CANOPY_EXTENT
     CAC = CROSA*CBD/3._EB
-    IF (CAC >= 1._EB) THEN
+    IF (CAC >= 1._EB) THEN !active crown fire
       ROS_HEAD_CROWN(I,J) = CROSA*MPM_TO_MPS !convert m/min to m/s
       ROS_HEAD(I,J) = ROS_HEAD_CROWN(I,J)
       CFB_LS(I,J) = CRLOAD
-    ELSE
+    ELSE !passive crown fire
       ROS_HEAD_CROWN(I,J) = CROSP*MPM_TO_MPS
       ROS_HEAD(I,J) = ROS_HEAD_CROWN(I,J)
       CFB_LS(I,J) = CRLOAD*MAX(1.0_EB, (PROB - PROB_CROWN)/(1._EB - PROB_CROWN))
@@ -3390,7 +3407,7 @@ DO WHILE (TIME_LS < T_FINAL)
     ENDIF
 
     IF (VEG_LEVEL_SET_SURFACE_HEATFLUX) WC%QCONF = WC%VEG_LSET_SURFACE_HEATFLUX
-    IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) SF%DT_INSERT = DT_LS
+    IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) SF%DT_INSERT = DT_LS !**** is this correct?
     IF (WC%LSET_FIRE) HRRPUA_OUT(IIG,JJG) = -WC%VEG_LSET_SURFACE_HEATFLUX*0.001 !kW/m^2 for Smokeview output
 
 !---Drag constant can vary with height, if hveg > dzgrid
@@ -3468,6 +3485,7 @@ IF (VEG_LEVEL_SET_THERMAL_ELEMENTS) THEN
 !   TE_HRR_TOTAL  = TE_HRR_TOTAL + TE_TIME_FACTOR*LP%LSET_HRRPUV*DX(II)*DY(JJ)*DZ(KK)
     TE_HRRPUV =  TE_TIME_FACTOR*LP%LSET_HRRPUV
     IF (T_CFD - LP%T > PC%TE_BURNTIME) TE_HRRPUV = 0.0_EB
+    IF (T_CFD - LP%T + DT_LS > PC%TE_BURNTIME) TE_HRRPUV = TE_HRRPUV + TE_HRRPUV*(PC%TE_BURNTIME-(T_CFD-LP%T))/DT_LS
     Q(II,JJ,KK) = Q(II,JJ,KK) + TE_HRRPUV
 !   D_LAGRANGIAN(II,JJ,KK) = D_LAGRANGIAN(II,JJ,KK)  +  &
 !                             TE_TIME_FACTOR*LP%LSET_HRRPUV*RCP_GAS/(RHO(II,JJ,KK)*TMP(II,JJ,KK))
