@@ -259,26 +259,28 @@ TREE_LOOP: DO NCT=1,N_TREES
      Y_EXTENT = TREEYF - TREEYS
      Z_EXTENT = TREEZF - TREEZS
      IF(X_EXTENT <= 0.0_EB .OR. Y_EXTENT <= 0.0_EB .OR. Z_EXTENT <= 0.0_EB) THEN
-     PRINT*,'ERROR RECTANGULAR TREE: for (maybe) tree number ', NCT
-     PRINT*,'ZERO OR NEGATIVE TREE WIDTH IN ONE OR MORE DIRECTIONS'
-     PRINT*,'X LENGTH = ',X_EXTENT
-     PRINT*,'Y LENGTH = ',Y_EXTENT
-     PRINT*,'Z LENGTH = ',Z_EXTENT
-     STOP
+       PRINT*,'ERROR RECTANGULAR TREE: for (maybe) tree number ', NCT
+       PRINT*,'ZERO OR NEGATIVE TREE WIDTH IN ONE OR MORE DIRECTIONS'
+       PRINT*,'X LENGTH = ',X_EXTENT
+       PRINT*,'Y LENGTH = ',Y_EXTENT
+       PRINT*,'Z LENGTH = ',Z_EXTENT
+       STOP
      ENDIF
-!print 1113,treexs,treexf,treeys,treeyf,treezs,treezf
-!1113 format('vege',2x,6(E12.4))
 
     DO NZB=0,KBAR-1
 ! -- Check if veg is present in cell NXB,NYB,NZB (it may occupy only a portion of the cell)
       IF (Z(NZB+1) > TREEZS .AND. TREEZF > Z(NZB)) THEN
+!print*,'NM',nm
+!print '(A,2x,2ES12.4)','z(nzb+1), zs',z(nzb+1),treezs
+!print '(A,2x,2ES12.4)','zf,z(nzb)',treezf,z(nzb)
         DO NYB = 0,JBAR-1
-          IF (Y(NYB+1) > TREEYS .AND. TREEYF > Y(NYB)) THEN
+          IF (Y(NYB+1) > TREEYS+0.00001_EB .AND. TREEYF > Y(NYB)) THEN !the 0.00001_EB was added to ensure > instead of >=
+!                                                                       needs fixing
+! print*,'NM',nm
+! print '(A,2x,2ES12.4)','y(nyb+1), ys',y(nyb+1),treeys
+! print '(A,2x,2ES12.4)','yf,y(nyb)',treeyf,y(nyb)
             DO NXB = 0,IBAR-1
               IF (X(NXB+1) > TREEXS .AND. TREEXF > X(NXB)) THEN
-!  print*,'NM',nm
-!  print '(A,2x,2ES12.4)','x(nb+1), xs',x(nxb+1),treexs
-!  print '(A,2x,2ES12.4)','xf  ,x(nxb)',treexf,x(nxb)
                 NLP  = NLP + 1
                 NLP_RECT_VEG = NLP_RECT_VEG + 1
                 IF (NLP>NLPDIM) THEN
@@ -452,8 +454,8 @@ TREE_LOOP: DO NCT=1,N_TREES
         LP%U = 0.
         LP%V = 0.
         LP%W = 0.
-!       LP%R =  3./PC%VEG_SV !sphere, Porterie
-        LP%R =  2./PC%VEG_SV !cylinder, Porterie
+        IF (PC%DRAG_LAW == SPHERE_DRAG)   LP%R =  3./PC%VEG_SV
+        IF (PC%DRAG_LAW == CYLINDER_DRAG) LP%R =  2./PC%VEG_SV 
         LP%IOR = 0
         LP%VEG_FUEL_MASS  = PC%VEG_BULK_DENSITY
         LP%VEG_MOIST_MASS = PC%VEG_MOISTURE*LP%VEG_FUEL_MASS
@@ -616,6 +618,7 @@ REAL(EB) :: FCTR_DT_CYCLES,FCTR_RDT_CYCLES,Q_VEG_CHAR_TOTAL,MPV_CHAR_CO2_TOTAL,M
             MPV_MOIST_LOSS_TOTAL,MPV_VOLIT_TOTAL,VEG_VF
 REAL(EB) :: VEG_CRITICAL_MASSFLUX,VEG_CRITICAL_MASSSOURCE
 REAL(EB) :: CM,CN,RHO_AIR
+REAL(EB) :: HCON_VEG_FORCED,HCON_VEG_FREE,LENGTH_SCALE,NUSS_HILPERT_CYL_FORCEDCONV,NUSS_MORGAN_CYL_FREECONV,RAYLEIGH_NUM
 
 !place holder
 REAL(EB) :: RCP_TEMPORARY
@@ -814,19 +817,18 @@ PARTICLE_LOOP: DO I=1,NLP
  QREL = MAX(1.E-6_EB,SQRT(UREL*UREL + VREL*VREL + WREL*WREL))
 
 ! Gas thermophysical quantities
- TMP_GAS  = TMP(II,JJ,KK)
- TMP_FILM = 0.5_EB*(TMP_GAS + TMP_VEG)
- RHO_GAS  = RHO(II,JJ,KK)
- MU_AIR   = MU_Z(MIN(5000,NINT(TMP_FILM)),0)*SPECIES_MIXTURE(0)%MW
- K_AIR    = CPOPR*MU_AIR !W/m.K
-
-! Gas thermophysical quantities assuming gas is air
 !TMP_GAS  = TMP(II,JJ,KK)
 !TMP_FILM = 0.5_EB*(TMP_GAS + TMP_VEG)
-!RHO_AIR  = 101325./(287.05*TMP_FILM) !rho_air = standard pressure / (ideal gas constant*gas temp)
-!RHO_GAS  = RHO_AIR
-!MU_AIR   =  (0.000001458_EB*TMP_FILM**1.5_EB)/(TMP_FILM+110.4_EB) !kg/m/s
-!K_AIR    = (0.002495_EB*TMP_FILM**1.5_EB)/(TMP_FILM+194._EB) !W/m.K
+!RHO_GAS  = RHO(II,JJ,KK)
+!MU_AIR   = MU_Z(MIN(5000,NINT(TMP_FILM)),0)*SPECIES_MIXTURE(0)%MW
+!K_AIR    = CPOPR*MU_AIR !W/m.K
+
+! Gas thermophysical quantities assuming gas is air
+ TMP_GAS  = TMP(II,JJ,KK)
+ TMP_FILM = 0.5_EB*(TMP_GAS + TMP_VEG)
+ RHO_AIR  = 101325./(287.05*TMP_FILM) !rho_air = standard pressure / (ideal gas constant*gas temp)
+ MU_AIR   =  (0.000001458_EB*TMP_FILM**1.5_EB)/(TMP_FILM+110.4_EB) !kg/m/s
+ K_AIR    = (0.002495_EB*TMP_FILM**1.5_EB)/(TMP_FILM+194._EB) !W/m.K
 
 TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
 
@@ -837,12 +839,13 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
  CP_ASH   = 1244._EB*(TMP_VEG/TMPA)**0.315 !J/kg/K Lautenberger & Fernandez-Pell, C&F 2009 156:1503-1513
 
 ! Divergence of convective and radiative heat fluxes
-!print*,'---- NM=',NM
-!print*,rho_gas,qrel,sv_veg,mu_air
- RE_D     = RHO_GAS*QREL*4._EB/(SV_VEG*MU_AIR)
+ RE_D     = RHO_AIR*QREL*4._EB/(SV_VEG*MU_AIR)
  RHO_GAS  = RHO(II,JJ,KK)
 
-! Hilpert Correlation (Incropera & DeWitt Fourth Edition, p. 370)
+! - Forced convection heat transfer coefficients on veg particles
+!
+! Hilpert Correlation (Incropera & DeWitt Fourth Edition, p. 370) for cylinder in crossflow,
+! forced convection
  IF(RE_D < 4._EB) THEN
    CN = 0.989_EB
    CM = 0.330_EB
@@ -853,7 +856,36 @@ TIME_SUBCYCLING_LOOP: DO IDT=1,NDT_CYCLES
    CN = 0.683_EB
    CM = 0.466_EB
  ENDIF
- QCON_VEG = 0.25_EB*SV_VEG*K_AIR*CN*(RE_D**CM)*PR_ONTH*TMP_GMV !W/m^2 from Hilpert (cylinder)
+ NUSS_HILPERT_CYL_FORCEDCONV = CN*(RE_D**CM)*PR_ONTH !Nusselt number
+!print '(A,2x,2ES12.4)','nuss Hilpert,Re', NUSS_HILPERT_CYL_FORCEDCONV,re_d
+ HCON_VEG_FORCED = 0.25_EB*SV_VEG*K_AIR*NUSS_HILPERT_CYL_FORCEDCONV !W/m^2 from Hilpert (cylinder)
+
+! - Free convection heat transfer coefficients
+ LENGTH_SCALE = 4._EB/SV_VEG !horizontal cylinder diameter
+ RAYLEIGH_NUM = 9.8_EB*ABS(TMP_GMV)*LENGTH_SCALE**3*RHO_AIR**2*CP_AIR_0/(TMP_FILM*MU_AIR*K_AIR)
+
+! Morgan correlation (Incropera & DeWitt, 4th Edition, p. 501-502) for horizontal cylinder, free convection
+ IF (RAYLEIGH_NUM < 0.01_EB) THEN
+   CN = 0.675_EB
+   CM = 0.058_EB
+ ELSE IF (RAYLEIGH_NUM >= 0.01_EB .AND. RAYLEIGH_NUM < 100._EB) THEN
+   CN = 1.02_EB
+   CM = 0.148_EB
+ ELSE IF (RAYLEIGH_NUM >= 100._EB .AND. RAYLEIGH_NUM < 10**4._EB) THEN
+   CN = 0.85_EB
+   CM = 0.188_EB
+ ELSE IF (RAYLEIGH_NUM >= 10**4._EB .AND. RAYLEIGH_NUM < 10**7._EB) THEN
+   CN = 0.48_EB
+   CM = 0.25_EB
+ ELSE IF (RAYLEIGH_NUM >= 10**7._EB .AND. RAYLEIGH_NUM < 10**12._EB) THEN
+   CN = 0.125_EB
+   CM = 0.333_EB
+ ENDIF
+ NUSS_MORGAN_CYL_FREECONV = CN*RAYLEIGH_NUM**CM
+ HCON_VEG_FREE = 0.25_EB*SV_VEG*K_AIR*NUSS_MORGAN_CYL_FREECONV !W/m^2
+
+ QCON_VEG = MAX(HCON_VEG_FORCED,HCON_VEG_FREE)*TMP_GMV !W/m^2
+ 
 
 
 ! IF (TMP_VEG >= TMP_GAS )QCON_VEG = SV_VEG*(0.5_EB*K_AIR*0.683_EB*RE_D**0.466_EB)*0.5_EB*TMP_GMV !W/m^2 from Porterie
@@ -1258,6 +1290,9 @@ ENDDO TIME_SUBCYCLING_LOOP
   TREE_OUTPUT_DATA(N_TREE,10,NM) = TREE_OUTPUT_DATA(N_TREE,10,NM) + MPV_CHAR_LOSS_TOTAL*V_CELL !kg 
   TREE_OUTPUT_DATA(N_TREE,11,NM) = TREE_OUTPUT_DATA(N_TREE,11,NM) - Q_VEG_CHAR_TOTAL*V_CELL*RDT*0.001_EB !kW
 
+! TREE_OUTPUT_DATA(N_TREE,10,NM) = TREE_OUTPUT_DATA(N_TREE,10,NM) + NUSS_HILPERT_CYL_FORCEDCONV
+! TREE_OUTPUT_DATA(N_TREE,11,NM) = TREE_OUTPUT_DATA(N_TREE,11,NM) + NUSS_MORGAN_CYL_FREECONV 
+
 ! TREE_OUTPUT_DATA(N_TREE,4,NM) = TREE_OUTPUT_DATA(N_TREE,4,NM) + LP%VEG_PACKING_RATIO
 ! TREE_OUTPUT_DATA(N_TREE,5,NM) = TREE_OUTPUT_DATA(N_TREE,5,NM) + LP%VEG_SV
 
@@ -1266,7 +1301,7 @@ ENDDO TIME_SUBCYCLING_LOOP
 ENDDO PARTICLE_LOOP
 
 !print*,'--------------------------------'
-!print*,'VEGE: NM, TREE_OUTPUT_DATA(1,1,NM),(1,2,NM)',nm, tree_output_data(1,1,nm),tree_output_data(1,2,nm)
+!print '(A,1x,I2,1x,ES12.4)','vege:nm,tree_output divqc ',nm,tree_output_data(1,7,nm)
 
 ! Write out total bulk
 !TOTAL_BULKDENS_MOIST = TOTAL_MASS_MOIST/V_VEG
@@ -1287,14 +1322,14 @@ SUBROUTINE BNDRY_VEG_MASS_ENERGY_TRANSFER(T,NM)
 !
 ! Issues:
 ! 1. Are SF%VEG_FUEL_FLUX_L and SF%VEG_MOIST_FLUX_L needed in linear degradation model?
-USE PHYSICAL_FUNCTIONS, ONLY : GET_MASS_FRACTION,GET_SPECIFIC_HEAT
+USE PHYSICAL_FUNCTIONS, ONLY : DRAG,GET_MASS_FRACTION,GET_SPECIFIC_HEAT,GET_VISCOSITY,GET_CONDUCTIVITY
 REAL(EB) :: ZZ_GET(0:N_TRACKED_SPECIES)
 REAL(EB) :: DT_BC,RDT_BC,T
 INTEGER, INTENT(IN) :: NM
 INTEGER  ::  IW
-INTEGER  ::  I,IIG,JJG,KKG,KGRID
-REAL(EB) :: CP_MOIST_AND_VEG,DZVEG_L,ETAVEG_H,H_CONV_L, &
-            KAPPA_VEG,K_AIR,MU_AIR,QRADM_INC,QRADP_INC,RHO_GAS, &
+INTEGER  ::  I,IIG,JJG,KKG,KKG_L,KGRID
+REAL(EB) :: CP_GAS,CP_MOIST_AND_VEG,DZVEG_L,ETAVEG_H,H_CONV_L, &
+            KAPPA_VEG,K_GAS,MU_GAS,QRADM_INC,QRADP_INC,RHO_GAS, &
             TMP_BOIL,TMP_CHAR_MAX,TMP_FILM,TMP_G,DTMP_L,RE_H,RE_VEG_PART,U2,V2,RE_D,Y_O2,ZVEG
 !REAL(EB) :: H_CONV_FDS_WALL,DTMP_FDS_WALL,QCONF_FDS_WALL,LAMBDA_AIR,TMPG_A
 INTEGER  IIVEG_L,IVEG_L,J,LBURN,NVEG_L,I_FUEL
@@ -1310,7 +1345,8 @@ REAL(EB) :: CHAR_FCTR,CHAR_FCTR2,MPA_MOIST,MPA_MOIST_LOSS,MPA_MOIST_LOSS_MAX,MPA
             MPA_CHAR,MPA_VEG,MPA_CHAR_MIN,MPA_VEG_MIN,MPA_VOLIT,MPA_VOLIT_LOSS_MAX,MPA_CHAR_LOSS,MPA_ASH
 REAL(EB) :: DETA_VEG,ETA_H,ETAFM_VEG,ETAFP_VEG
 REAL(EB) :: QCONF_L,Q_FOR_DRYING,Q_VEG_MOIST,Q_VEG_VOLIT,QNET_VEG,Q_FOR_VOLIT,Q_VOLIT,Q_UPTO_VOLIT
-REAL(EB) :: CM,CN
+REAL(EB) :: C_DRAG,CM,CN,NUSS_HILPERT_CYL_FORCEDCONV,NUSS_MORGAN_CYL_FREECONV,HCON_VEG_FORCED,HCON_VEG_FREE,LENGTH_SCALE,RAYLEIGH_NUM, &
+            ZGRIDCELL,ZGRIDCELL0
 !LOGICAL  :: H_VERT_CYLINDER_LAMINAR,H_CYLINDER_RE
 
 INTEGER  :: IC,II,IOR,JJ,KK,IW_CELL
@@ -1352,13 +1388,22 @@ VEG_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
   H_H2O_VEG = SF%VEG_H_H2O !J/kg
   H_PYR_VEG = SF%VEG_H_PYR !J/kg
   RH_PYR_VEG = 1._EB/H_PYR_VEG
+  CHAR_FCTR  = 1._EB - SF%VEG_CHAR_FRACTION
+  CHAR_FCTR2 = 1._EB/CHAR_FCTR
 
+!Gas quantities 
   IIG = WC%IIG
   JJG = WC%JJG
   KKG = WC%KKG
   TMP_G = TMP(IIG,JJG,KKG)
-  CHAR_FCTR  = 1._EB - SF%VEG_CHAR_FRACTION
-  CHAR_FCTR2 = 1._EB/CHAR_FCTR
+  RHO_GAS  = RHO(IIG,JJG,KKG)
+! MU_GAS   = MU_Z(MIN(5000,NINT(TMP_G)),0)*SPECIES_MIXTURE(0)%MW
+  ZZ_GET(1:N_TRACKED_SPECIES) = ZZ(IIG,JJG,KKG,1:N_TRACKED_SPECIES)
+  CALL GET_VISCOSITY(ZZ_GET,MU_GAS,TMP_G)
+  U2 = 0.25*(U(IIG,JJG,KKG)+U(IIG-1,JJG,KKG))**2
+  V2 = 0.25*(V(IIG,JJG,KKG)+V(IIG,JJG-1,KKG))**2
+  RE_VEG_PART = 4._EB*RHO_GAS*SQRT(U2 + V2 + W(IIG,JJG,KKG)**2)/SF%VEG_SV/MU_GAS !for cylinder particle
+
   IF(SF%VEG_NO_BURN .OR. T <= DT_BC) WC%VEG_HEIGHT = SF%VEG_HEIGHT
 ! VEG_DRAG(IIG,JJG) = SF%VEG_DRAG_INI*(SF%VEG_CHARFRAC + CHAR_FCTR*WC%VEG_HEIGHT/SF%VEG_HEIGHT)
 
@@ -1385,16 +1430,38 @@ VEG_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 
 ! ENDIF
 
-!-- Most recent approach, drag constant can vary with height and fraction of grid cell occupied by veg
+!-- Most recent approach, drag can vary with height and fraction of grid cell occupied by veg on the gas
+!   phase grid (this is a rough model that needs improvement)
   VEG_DRAG(IIG,JJG,:) = 0.0_EB
   IF (WC%VEG_HEIGHT > 0.0_EB) THEN
-
-    DO KGRID=1,8
-      IF (Z(KGRID) <= WC%VEG_HEIGHT) VEG_DRAG(IIG,JJG,KGRID)= SF%VEG_DRAG_INI
-      IF (Z(KGRID) >  WC%VEG_HEIGHT .AND. Z(KGRID-1) < WC%VEG_HEIGHT) VEG_DRAG(IIG,JJG,KGRID)= &
-                       SF%VEG_DRAG_INI*(WC%VEG_HEIGHT-Z(KGRID-1))/(Z(KGRID)-Z(KGRID-1))
-    ENDDO
-
+    C_DRAG = 0.0_EB
+    IF (RE_VEG_PART > 0.0_EB) C_DRAG = DRAG(RE_VEG_PART,2) !2 is for cylinder, 1 is for sphere
+    ZGRIDCELL = Z(KKG)-Z(KKG-1)
+    !"Somewhat" unresolved fuel bed height
+    IF (ZGRIDCELL > WC%VEG_HEIGHT .AND. ZGRIDCELL <= 2.0_EB*SF%VEG_HEIGHT) VEG_DRAG(IIG,JJG,KKG)= SF%VEG_DRAG_INI*C_DRAG
+    !"Significantly" unresolved fuel bed height (placeholder)
+    IF (ZGRIDCELL > 2.0_EB*WC%VEG_HEIGHT) VEG_DRAG(IIG,JJG,KKG)= SF%VEG_DRAG_INI*C_DRAG*(Z(KKG)-SF%VEG_HEIGHT)/ZGRIDCELL
+    !Resolved fuel bed height
+    IF (ZGRIDCELL <= WC%VEG_HEIGHT) THEN
+      VEG_DRAG(IIG,JJG,KKG)= SF%VEG_DRAG_INI*C_DRAG
+      DO KGRID=1,8
+        ZGRIDCELL0 = ZGRIDCELL
+        ZGRIDCELL = ZGRIDCELL0 + Z(KKG+KGRID) - Z(KKG+KGRID-1)
+        IF (ZGRIDCELL >=  WC%VEG_HEIGHT .AND. ZGRIDCELL0 < WC%VEG_HEIGHT) THEN
+          TMP_G = TMP(IIG,JJG,KKG+KGRID)
+          RHO_GAS  = RHO(IIG,JJG,KKG+KGRID)
+!         MU_GAS   = MU_Z(MIN(5000,NINT(TMP_G)),0)*SPECIES_MIXTURE(0)%MW
+          ZZ_GET(1:N_TRACKED_SPECIES) = ZZ(IIG,JJG,KKG+KGRID,1:N_TRACKED_SPECIES)
+          CALL GET_VISCOSITY(ZZ_GET,MU_GAS,TMP_G)
+          U2 = 0.25*(U(IIG,JJG,KKG+KGRID)+U(IIG-1,JJG,KKG+KGRID))**2
+          V2 = 0.25*(V(IIG,JJG,KKG+KGRID)+V(IIG,JJG-1,KKG+KGRID))**2
+          RE_VEG_PART = 4._EB*RHO_GAS*SQRT(U2 + V2 + W(IIG,JJG,KKG+KGRID)**2)/SF%VEG_SV/MU_GAS !for cylinder particle
+          C_DRAG = 0.0_EB
+          IF (RE_VEG_PART > 0.0_EB) C_DRAG = DRAG(RE_VEG_PART,2) !2 is for cylinder, 1 is for sphere
+          VEG_DRAG(IIG,JJG,KKG+KGRID)= SF%VEG_DRAG_INI*C_DRAG*(WC%VEG_HEIGHT-ZGRIDCELL0)/(Z(KKG+KGRID)-Z(KKG+KGRID-1))
+        ENDIF
+      ENDDO
+    ENDIF
   ENDIF
 
   IF(SF%VEG_NO_BURN) CYCLE VEG_WALL_CELL_LOOP
@@ -1451,14 +1518,23 @@ VEG_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 
 ! Determine vertical gas-phase grid cell index for each vegetation layer. 
 ! This is needed for cases in which the vegetation height is larger than the height of the first grid cell
-  SF%VEG_KGAS_L(:) = 0
-  DO IVEG_L = 0, NVEG_L - LBURN
-   ZVEG = WC%VEG_HEIGHT - REAL(IVEG_L,EB)*DZVEG_L 
+  DO IVEG_L = 1, NVEG_L - LBURN
+   ZVEG = REAL(IVEG_L,EB)*DZVEG_L 
+   ZGRIDCELL0 = 0.0_EB
    DO KGRID = 1,8
-     IF (ZVEG > Z(KGRID-1) .AND. ZVEG <= Z(KGRID)) SF%VEG_KGAS_L(IVEG_L)=KGRID
+     ZGRIDCELL = ZGRIDCELL0 + Z(KKG+KGRID) - Z(KKG+KGRID-1)
+     IF (ZVEG > ZGRIDCELL0 .AND. ZVEG <= ZGRIDCELL) SF%VEG_KGAS_L(IVEG_L)=KGRID
+     ZGRIDCELL0 = ZGRIDCELL
    ENDDO
   ENDDO
-!print*,'vege:kgas',SF%VEG_KGAS_L(:)
+! DO IVEG_L = 0, NVEG_L - LBURN
+!  ZVEG = WC%VEG_HEIGHT - REAL(IVEG_L,EB)*DZVEG_L 
+!  DO KGRID = 1,8
+!    IF (ZVEG > Z(KGRID-1) .AND. ZVEG <= Z(KGRID)) SF%VEG_KGAS_L(IVEG_L)=KGRID
+!  ENDDO
+! ENDDO
+!print '(A,1x,4ES12.4)','vege:z(1:3),dzveg_l,kgas',Z(1:3),dzveg_l
+!print*, 'veg_kgas_l',SF%VEG_KGAS_L(:)
 
 ! Factors for computing divergence of incident and self emission radiant fluxes
 ! in vegetation fuel bed. These need to be recomputed as the height of the
@@ -1544,7 +1620,7 @@ VEG_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 ! U2 = 0.25*(U(IIG,JJG,KKG)+U(IIG-1,JJG,KKG))**2
 ! V2 = 0.25*(V(IIG,JJG,KKG)+V(IIG,JJG-1,KKG))**2
 ! IF (H_CYLINDER_RE) THEN
-!  K_AIR    = CPOPR*MU_AIR !W/m.K
+!  K_GAS    = CPOPR*MU_AIR !W/m.K
 !  RE_VEG_PART = 4._EB*RHO_GAS*SQRT(U2 + V2 + W(IIG,JJG,1)**2)/SF%VEG_SV/MU_AIR
 !  RE_H = RE_VEG_PART**0.466_EB
 ! ENDIF
@@ -1552,56 +1628,108 @@ VEG_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 ! Divergence of convective and radiative heat fluxes
 !print*,'---- NM=',NM
 !print*,rho_gas,qrel,sv_veg,mu_air
-
+ print*,'-------------'
+!print '(A,1x,2I3)','nveg_l,lburn',nveg_l,lburn
   DO I=1,NVEG_L-LBURN
-    KKG   = SF%VEG_KGAS_L(I)
-    TMP_G = TMP(IIG,JJG,KKG)
-    DTMP_L = TMP_G - WC%VEG_TMP_L(I+LBURN)
+    KKG_L = SF%VEG_KGAS_L(I)
+    TMP_G = TMP(IIG,JJG,KKG_L)
+print '(A,1x,3I3)','kkg_l,nveg_l,lburn',kkg_l,nveg_l,lburn
+print '(A,1x,2ES12.4)','tmp_g,tmp_veg',tmp_g,wc%veg_tmp_l(nveg_l+1-i)
+    DTMP_L = TMP_G - WC%VEG_TMP_L(NVEG_L+1-I)
+    RHO_GAS  = RHO(IIG,JJG,KKG_L)
+    TMP_FILM = 0.5_EB*(TMP_G + WC%VEG_TMP_L(NVEG_L+1-I))
+!   MU_GAS   = MU_Z(MIN(5000,NINT(TMP_FILM)),0)*SPECIES_MIXTURE(0)%MW
+    ZZ_GET(1:N_TRACKED_SPECIES) = ZZ(IIG,JJG,KKG_L,1:N_TRACKED_SPECIES)
+    CALL GET_VISCOSITY(ZZ_GET,MU_GAS,TMP_G)
+    CALL GET_SPECIFIC_HEAT(ZZ_GET,CP_GAS,TMP_G)
+    CALL GET_CONDUCTIVITY(ZZ_GET,K_GAS,TMP_G)
+    U2 = 0.25*(U(IIG,JJG,KKG_L)+U(IIG-1,JJG,KKG_L))**2
+    V2 = 0.25*(V(IIG,JJG,KKG_L)+V(IIG,JJG-1,KKG_L))**2
+!   K_GAS    = CPOPR*MU_GAS !W/(m.K)
+    RE_VEG_PART = 4._EB*RHO_GAS*SQRT(U2 + V2 + W(IIG,JJG,KKG_L)**2)/SF%VEG_SV/MU_GAS !for cylinder SV
+
+
+! - Forced convection heat transfer coefficients in a layer
+!
+! Hilpert Correlation (Incropera & DeWitt Fourth Edition, p. 370) for cylinder in crossflow,
+! forced convection
+    IF(RE_VEG_PART < 4._EB) THEN
+      CN = 0.989_EB
+      CM = 0.330_EB
+    ELSE IF (RE_VEG_PART >= 4._EB .AND. RE_VEG_PART < 40._EB) THEN
+      CN = 0.911_EB
+      CM = 0.385_EB
+    ELSE
+      CN = 0.683_EB
+      CM = 0.466_EB
+    ENDIF
+    NUSS_HILPERT_CYL_FORCEDCONV = CN*(RE_VEG_PART**CM)*PR_ONTH !Nusselt number
+    HCON_VEG_FORCED = 0.25_EB*SF%VEG_SV*K_GAS*NUSS_HILPERT_CYL_FORCEDCONV !W/m^2 from Hilpert (cylinder)
+
+! - Free convection heat transfer coefficients
+    LENGTH_SCALE = 4._EB/SF%VEG_SV !horizontal cylinder diameter
+    RAYLEIGH_NUM = 9.8_EB*ABS(DTMP_L)*LENGTH_SCALE**3*RHO_GAS**2*CP_GAS/(TMP_FILM*MU_GAS*K_GAS)
+
+! Morgan correlation (Incropera & DeWitt, 4th Edition, p. 501-502) for horizontal cylinder, free convection
+    IF (RAYLEIGH_NUM < 0.01_EB) THEN
+      CN = 0.675_EB
+      CM = 0.058_EB
+    ELSE IF (RAYLEIGH_NUM >= 0.01_EB .AND. RAYLEIGH_NUM < 100._EB) THEN
+      CN = 1.02_EB
+      CM = 0.148_EB
+    ELSE IF (RAYLEIGH_NUM >= 100._EB .AND. RAYLEIGH_NUM < 10**4._EB) THEN
+      CN = 0.85_EB
+      CM = 0.188_EB
+    ELSE IF (RAYLEIGH_NUM >= 10**4._EB .AND. RAYLEIGH_NUM < 10**7._EB) THEN
+      CN = 0.48_EB
+      CM = 0.25_EB
+    ELSE IF (RAYLEIGH_NUM >= 10**7._EB .AND. RAYLEIGH_NUM < 10**12._EB) THEN
+      CN = 0.125_EB
+      CM = 0.333_EB
+    ENDIF
+print '(A,1x,3ES12.4)','cn,cm,rayleigh_num',CN,CM,rayleigh_num
+    NUSS_MORGAN_CYL_FREECONV = CN*RAYLEIGH_NUM**CM
+    HCON_VEG_FREE = 0.25_EB*SF%VEG_SV*K_GAS*NUSS_MORGAN_CYL_FREECONV !W/K/m^2
+
+    H_CONV_L = MAX(HCON_VEG_FORCED,HCON_VEG_FREE)
 
 !Convective heat correlation for laminar flow (Holman see ref above) 
-    IF (SF%VEG_HCONV_CYLLAM) H_CONV_L = 1.42_EB*(ABS(DTMP_L)/DZVEG_L)**0.25
+!   IF (SF%VEG_HCONV_CYLLAM) H_CONV_L = 1.42_EB*(ABS(DTMP_L)/DZVEG_L)**0.25
+    H_CONV_L = 1.42_EB*(ABS(DTMP_L)/DZVEG_L)**0.25
 
-!Convective heat correlation that accounts for air flow (Porterie via DeWitt, this is contained in the
-! Hilpert correlation below)
+!Convective heat correlation that accounts for air flow (Hilpert Correlation; Incropera & Dewitt Forth Edition p. 370)
 !   IF(SF%VEG_HCONV_CYLRE) THEN 
 !    RHO_GAS  = RHO(IIG,JJG,KKG)
-!    MU_AIR   = MU_Z(MIN(5000,NINT(TMP_G)),0)*SPECIES_MIXTURE(0)%MW
+!    TMP_FILM = 0.5_EB*(TMP_G + WC%VEG_TMP_L(I+LBURN))
+!    MU_AIR   = MU_Z(MIN(5000,NINT(TMP_FILM)),0)*SPECIES_MIXTURE(0)%MW
 !    U2 = 0.25*(U(IIG,JJG,KKG)+U(IIG-1,JJG,KKG))**2
 !    V2 = 0.25*(V(IIG,JJG,KKG)+V(IIG,JJG-1,KKG))**2
 !    K_AIR    = CPOPR*MU_AIR !W/(m.K)
 !    RE_VEG_PART = 4._EB*RHO_GAS*SQRT(U2 + V2 + W(IIG,JJG,KKG)**2)/SF%VEG_SV/MU_AIR
-!    RE_H = RE_VEG_PART**0.466_EB
-!    H_CONV_L = 0.25*0.683*SF%VEG_SV*K_AIR*RE_H !W/m^2
+
+!    IF(RE_VEG_PART < 4._EB) THEN
+!      CN = 0.989_EB
+!      CM = 0.330_EB
+!    ELSE IF (RE_VEG_PART >= 4._EB .AND. RE_VEG_PART < 40._EB) THEN
+!      CN = 0.911_EB
+!      CM = 0.385_EB
+!    ELSE
+!      CN = 0.683_EB
+!      CM = 0.466_EB
+!    ENDIF
+!    H_CONV_L = 0.25_EB*SF%VEG_SV*K_AIR*CN*(RE_VEG_PART**CM)*PR_ONTH !W/K/m^2
 !   ENDIF
-
-!Convective heat correlation that accounts for air flow (Hilpert Correlation; Incropera & Dewitt Forth Edition p. 370)
-    IF(SF%VEG_HCONV_CYLRE) THEN 
-     RHO_GAS  = RHO(IIG,JJG,KKG)
-     TMP_FILM = 0.5_EB*(TMP_G + WC%VEG_TMP_L(I+LBURN))
-     MU_AIR   = MU_Z(MIN(5000,NINT(TMP_FILM)),0)*SPECIES_MIXTURE(0)%MW
-     U2 = 0.25*(U(IIG,JJG,KKG)+U(IIG-1,JJG,KKG))**2
-     V2 = 0.25*(V(IIG,JJG,KKG)+V(IIG,JJG-1,KKG))**2
-     K_AIR    = CPOPR*MU_AIR !W/(m.K)
-     RE_VEG_PART = 4._EB*RHO_GAS*SQRT(U2 + V2 + W(IIG,JJG,KKG)**2)/SF%VEG_SV/MU_AIR
-
-     IF(RE_VEG_PART < 4._EB) THEN
-       CN = 0.989_EB
-       CM = 0.330_EB
-     ELSE IF (RE_VEG_PART >= 4._EB .AND. RE_VEG_PART < 40._EB) THEN
-       CN = 0.911_EB
-       CM = 0.385_EB
-     ELSE
-       CN = 0.683_EB
-       CM = 0.466_EB
-     ENDIF
-     H_CONV_L = 0.25_EB*SF%VEG_SV*K_AIR*CN*(RE_VEG_PART**CM)*PR_ONTH !W/K/m^2
-    ENDIF
 !
-    QCONF_L  = H_CONV_L*DTMP_L
-    SF%VEG_DIVQNET_L(I) = SF%VEG_PACKING*SF%VEG_SV*QCONF_L*DZVEG_L !W/m^2
+!   QCONF_L  = H_CONV_L*DTMP_L
+!   SF%VEG_DIVQNET_L(I) = SF%VEG_PACKING*SF%VEG_SV*QCONF_L !W/m^3
+
+    QCONF_L  = H_CONV_L*DTMP_L !W/m^2
+!print '(A,1x,4ES12.4)','vege: Re,h_forced,h_free,dtmp_l',re_veg_part,hcon_veg_forced,hcon_veg_free,dtmp_l
+    SF%VEG_DIVQNET_L(I) = SF%VEG_PACKING*SF%VEG_SV*QCONF_L !W/m^3
+!print '(A,1x,4ES16.8)','tmp_g,tmp_veg,dtmp_l,divqnet',tmp_g,wc%veg_tmp_l(nveg_l+1-i),dtmp_l,sf%veg_divqnet_l(I)
   ENDDO
 !
-  WALL(IW)%QCONF = SUM(SF%VEG_DIVQNET_L) !*RDN(IW)*WC%VEG_HEIGHT
+  WALL(IW)%QCONF = SUM(SF%VEG_DIVQNET_L)*DZVEG_L !*RDN(IW)*WC%VEG_HEIGHT
 ! qconf(iw) = 0.0_EB
 !
 ! -----------------------------------------------
@@ -1907,9 +2035,10 @@ VEG_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 !relation for oxygen based on the conserved scalar approach for gas phase
 !combustion)
       IF_CHAR_OXIDATION: IF (SF%VEG_CHAR_OXIDATION .AND. MPA_CHAR > 0.0_EB) THEN
-         RE_D = RHO_GAS*SQRT(U2 + V2 + W(IIG,JJG,1)**2)*4._EB/SF%VEG_SV/MU_AIR 
          ZZ_GET(1:N_TRACKED_SPECIES) = ZZ(IIG,JJG,KKG,1:N_TRACKED_SPECIES)
          CALL GET_MASS_FRACTION(ZZ_GET,O2_INDEX,Y_O2)
+         CALL GET_VISCOSITY(ZZ_GET,MU_GAS,TMP_G)
+         RE_D = RHO_GAS*SQRT(U2 + V2 + W(IIG,JJG,1)**2)*4._EB/SF%VEG_SV/MU_GAS 
          MPA_CHAR_LOSS = DT_BC*RHO_GAS*Y_O2*A_CHAR_VEG/NU_O2_CHAR_VEG*SF%VEG_SV*  &
                          SF%VEG_PACKING*EXP(-E_CHAR_VEG/WC%VEG_TMP_L(IVEG_L))*  &
                          (1+BETA_CHAR_VEG*SQRT(RE_D))
@@ -1954,6 +2083,7 @@ VEG_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
 ! IF (LBURN < NVEG_L)  TMP_F(IW) = WC%VEG_TMP_L(1+LBURN)
   IF (LBURN < NVEG_L) THEN
     WALL(IW)%TMP_F = WC%VEG_TMP_L(1+LBURN)
+if (wall(iw)%tmp_f < 0.0_EB) print '(A,1x,1ES16.8)','vege:wall(iw)%tmp_f',wall(iw)%tmp_f
 !   TMP_F(IW) = ((VEG_QRP_INC(0)+VEG_QRP_EMISS(0))/SIGMA)**.25 !as done in FDS4
   ELSE
     WALL(IW)%TMP_F = MAX(TMP_G,TMPA) !Tveg=Tgas if veg is completely burned
@@ -3308,12 +3438,17 @@ DO WHILE (TIME_LS < T_FINAL)
 !and out of the grid cell (FB_TIME_FCTR).
 
     HRRPUA_OUT(IIG,JJG) = 0.0 !kW/m^2 
+    TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
 
-    IF_FIRELINE_PASSAGE: IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. SF%VEG_LSET_BURNER) THEN 
+    IF_FIRELINE_PASSAGE: IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. SF%VEG_LSET_BURNER .AND. &
+                             .NOT. VEG_LEVEL_SET_BURNERS_FOR_FIRELINE) THEN 
 
       WC%LSET_FIRE = .TRUE.
-      TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
-      SHF = (1.0_EB-SF%VEG_CHAR_FRACTION)*SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD/SF%VEG_LSET_FIREBASE_TIME
+!     TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
+      SHF = (1.0_EB-SF%VEG_CHAR_FRACTION)*SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD*RFIREBASE_TIME !max surface heat flux, W/m^2
+!if(iig==31 .and. jjg==49 .and. nm==5) print '(A,2x,5ES12.4)','time, charfrac,Hc,w,rfbt =', & 
+!            t_cfd,sf%veg_char_fraction,sf%veg_lset_heat_of_combustion,total_fuel_load,rfirebase_time
+
 !Grid cell > fire depth      
       IF (GRIDCELL_FRACTION < 1.0_EB) THEN
         SHF = SHF*GRIDCELL_FRACTION
@@ -3329,13 +3464,15 @@ DO WHILE (TIME_LS < T_FINAL)
         WC%VEG_HEIGHT = 0.0_EB
         BURN_TIME_LS(IIG,JJG) = BURN_TIME_LS(IIG,JJG) + DT_LS
 
-!if(x(iig)==21 .and. y(jjg)==2) then 
-!   print '(A,2x,7ES12.4)','----time dtdx<=dtdtfb, ros, bt, gct, fbt, fctr, shf =',t_cfd,ros_mag,bt,gridcell_time,firebase_time,fb_time_fctr,-shf*0.001_EB
+if(iig==46 .and. jjg==49 .and. nm==5) then 
+   print '(A,2x,7ES12.4)','----time dx>fd, ros, bt, gct, fbt, fctr, shf =',t_cfd,ros_mag,bt,gridcell_time,sf%veg_lset_firebase_time, &
+                                                                           fb_time_fctr,-shf*0.001_EB
+   print '(A,2x,1ES12.4,L2)','cell fract, lset_fire =',gridcell_fraction,wc%lset_fire
 !   print '(A,2x,4ES12.4,L2)','----time dtdx>dtfb, shf kW/m2, fb_time_fctr, cell fract, lset_fire =',t_cfd,-shf*0.001_EB,fb_time_fctr, &
 !                              gridcell_fraction,wc%lset_fire
 !   print '(A,2x,7ES12.4)','ros, hcomb, fuel load, fbt, cfb, probcruz, probin',ros_mag,sf%veg_lset_heat_of_combustion,total_fuel_load,  &
 !                              firebase_time,cfb_ls(iig,jjg),CRUZ_CROWN_PROB(IIG,JJG),sf%veg_lset_cruz_prob_crown
-!endif
+endif
         WC%VEG_LSET_SURFACE_HEATFLUX = -SHF*FB_TIME_FCTR
       ENDIF
 
@@ -3353,10 +3490,10 @@ DO WHILE (TIME_LS < T_FINAL)
         WC%VEG_HEIGHT = 0.0_EB
         BURN_TIME_LS(IIG,JJG) = BURN_TIME_LS(IIG,JJG) + DT_LS
 
-!if(x(iig)==21 .and. y(jjg)==2) then 
-!   print '(A,2x,7ES12.4)','++++time dtdx<=dtdtfb, ros, bt, gct, fbt, fctr, shf =',t_cfd,ros_mag,bt,gridcell_time,firebase_time,fb_time_fctr,-shf*0.001_EB
-!   print '(A,2x,4ES12.4,L2)','++++time dtdx<=dtdtfb, shf kW/m2, fb_time_fctr, cell fract, lset_fire =',t_cfd,-shf*0.001_EB,fb_time_fctr, &
-!                              gridcell_fraction,wc%lset_fire
+!if(iig==46 .and. jjg==49 .and. nm==5) then 
+!   print '(A,2x,7ES12.4)','++++time dx<=fd, ros, bt, gct, fbt, fctr, shf =',t_cfd,ros_mag,bt,gridcell_time,sf%veg_lset_firebase_time, &
+!                                                                            fb_time_fctr,-shf*0.001_EB
+!   print '(A,2x,2ES12.4,L2)','cell fract, lset_fire,W =',gridcell_fraction,total_fuel_load,wc%lset_fire
 !   print '(A,2x,7ES12.4)','ros, hcomb, fuel load, fbt, cfb, probcruz, probin',ros_mag,sf%veg_lset_heat_of_combustion,total_fuel_load,  &
 !                              firebase_time,cfb_ls(iig,jjg),CRUZ_CROWN_PROB(IIG,JJG),sf%veg_lset_cruz_prob_crown
 !endif
@@ -3382,7 +3519,7 @@ DO WHILE (TIME_LS < T_FINAL)
 !    print '(A,2x,ES12.4)','phi_ls(x+dx,y)',phi_ls(iig+1,jjg)
 !endif
 
-!-- Burner placement as determined in input file
+!-- Burner placement as explicitly specified (location,timing, etc.) in the input file
     IF (SF%VEG_LSET_BURNER .AND. .NOT. VEG_LEVEL_SET_BURNERS_FOR_FIRELINE) THEN
       IF (TIME_LS >= SF%VEG_LSET_BURNER_TIME_ON .AND. TIME_LS <= SF%VEG_LSET_BURNER_TIME_OFF) THEN
         WC%VEG_LSET_SURFACE_HEATFLUX = -SF%HRRPUA
@@ -3396,9 +3533,12 @@ DO WHILE (TIME_LS < T_FINAL)
 
 !-- Placement of burners as determined from reading a file containing a 2D array with HRRPUA values at times
     IF (VEG_LEVEL_SET_BURNERS_FOR_FIRELINE) THEN
+      SHF = (1.0_EB-SF%VEG_CHAR_FRACTION)*SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD*RFIREBASE_TIME !max surface heat flux, W/m^2
+      WC%LSET_FIRE = .FALSE.
+      WC%VEG_LSET_SURFACE_HEATFLUX = 0.0_EB
       IF (REAL(TIME_LS,FB) <=  LSET_TIME_HRRPUA_BURNER) THEN
         IF(HRRPUA_IN(IIG,JJG) > 0.0_FB) THEN
-          WC%VEG_LSET_SURFACE_HEATFLUX = -HRRPUA_IN(IIG,JJG)*1000._EB !W/m^2
+          IF (HRRPUA_IN(IIG,JJG)*1000._EB >= SF%VEG_LSET_HRRPUA_MINIMUM_FRAC*SHF) WC%VEG_LSET_SURFACE_HEATFLUX = -HRRPUA_IN(IIG,JJG)*1000._EB !W/m^2
           PHI_LS(IIG,JJG) = PHI_MAX_LS 
           WC%LSET_FIRE = .TRUE.
         ENDIF
@@ -3408,11 +3548,12 @@ DO WHILE (TIME_LS < T_FINAL)
           READ(LU_SLCF_LS(7)) ((HRRPUA_IN(IDUM,JDUM),IDUM=0,IBAR),JDUM=0,JBAR) 
         ENDDO
 111     IF(HRRPUA_IN(IIG,JJG) > 0.0) THEN
-          WC%VEG_LSET_SURFACE_HEATFLUX = -HRRPUA_IN(IIG,JJG)*1000._EB !W/m^2
+          IF (HRRPUA_IN(IIG,JJG)*1000._EB >= SF%VEG_LSET_HRRPUA_MINIMUM_FRAC*SHF) WC%VEG_LSET_SURFACE_HEATFLUX = -HRRPUA_IN(IIG,JJG)*1000._EB !W/m^2
           PHI_LS(IIG,JJG) = PHI_MAX_LS 
           WC%LSET_FIRE = .TRUE.
         ENDIF
       ENDIF
+!if(iig==46 .and. jjg==49 .and. nm==5) print '(A,2x,3ES12.4,L2)','SHF,HRRPUA_IN,WC%SHF=',shf,hrrpua_in(iig,jjg)*1000._EB,wc%veg_lset_surface_heatflux
     ENDIF
 
     IF (VEG_LEVEL_SET_SURFACE_HEATFLUX) WC%QCONF = WC%VEG_LSET_SURFACE_HEATFLUX
