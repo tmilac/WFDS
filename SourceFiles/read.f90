@@ -5188,7 +5188,7 @@ READ_SURF_LOOP: DO N=0,N_SURF
    SF%VEG_LSET_ROS_FLANK      = VEG_LSET_ROS_FLANK !flank fire rate of spread
    SF%VEG_LSET_ROS_BACK       = VEG_LSET_ROS_BACK !back fire rate of spread
    SF%VEG_LSET_WIND_EXP       = VEG_LSET_WIND_EXP !exponent on wind cosine in ROS formula
-   SF%VEG_LSET_SIGMA          = 0.01 * VEG_LSET_SIGMA !SAV for Farsite emulation in LSET, requires UNITS of 1/cm!
+   SF%VEG_LSET_SIGMA          = 0.01_EB * VEG_LSET_SIGMA !SAV for Farsite emulation in LSET, requires UNITS of 1/cm!
    SF%VEG_LSET_SURF_HEIGHT    = VEG_LSET_SURF_HEIGHT
    SF%VEG_LSET_BETA           = VEG_LSET_BETA
    SF%VEG_LSET_ELLIPSE        = VEG_LSET_ELLIPSE
@@ -5241,6 +5241,7 @@ READ_SURF_LOOP: DO N=0,N_SURF
    SF%VEG_SV  = VEG_SV
    SF%VEG_KAPPA    = 0.25_EB*VEG_SV*SF%VEG_PACKING
    SF%NVEG_L       = INT(1. + VEG_HEIGHT*3._EB*SF%VEG_KAPPA)
+   SF%NVEG_L       = MAX(SF%NVEG_L,3)
    IF(VEGETATION_LAYERS > 0) SF%NVEG_L = VEGETATION_LAYERS
    SF%VEG_DRAG_INI = VEG_DRAG_CONSTANT*SF%VEG_PACKING*SF%VEG_SV
    SF%VEG_DEGRADATION   = VEG_DEGRADATION
@@ -5846,7 +5847,7 @@ VEG_H_CHAR                   = -12.0E+3_EB !kJ/kg Porterie, Grishin
 VEG_A_CHAR                   = 430._EB !m/s Porterie, Grishin
 VEG_E_CHAR                   = 9000._EB !K
 VEG_BETA_CHAR                = 0.2_EB !Porterie to account for blowing in char ox
-VEG_NU_O2_CHAR               = 1.65 !Porterie
+VEG_NU_O2_CHAR               = 1.65_EB !Porterie
 
 !Default values for level set fire front propagation model parameters
 VEG_LSET_IGNITE_TIME         = 1.0E20_EB
