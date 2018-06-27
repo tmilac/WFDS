@@ -751,6 +751,7 @@ IF (VEG_LEVEL_SET) THEN
 
   ALLOCATE(M%HEAD_WIDTH(0:IBP1,0:JBP1),STAT=IZERO) ; CALL ChkMemErr('INIT','HEAD_WIDTH',IZERO) ; M%HEAD_WIDTH = 1.0_EB
   ALLOCATE(M%ROS_HEAD(0:IBP1,0:JBP1),STAT=IZERO)   ; CALL ChkMemErr('INIT','ROS_HEAD',IZERO) ; M%ROS_HEAD= 0.0_EB
+  ALLOCATE(M%ROS_HEAD_FM10(0:IBP1,0:JBP1),STAT=IZERO)   ; CALL ChkMemErr('INIT','ROS_HEAD_FM10',IZERO) ; M%ROS_HEAD_FM10= 0.0_EB
   ALLOCATE(M%ROS_HEAD_CROWN(0:IBP1,0:JBP1),STAT=IZERO)   ; CALL ChkMemErr('INIT','ROS_HEAD_CROWN',IZERO) ; M%ROS_HEAD_CROWN= 0.0_EB
   ALLOCATE(M%ROS_FLANK(0:IBP1,0:JBP1),STAT=IZERO)  ; CALL ChkMemErr('INIT','ROS_FLANK',IZERO) ; M%ROS_FLANK= 0.0_EB
   ALLOCATE(M%ROS_BACKU(0:IBP1,0:JBP1),STAT=IZERO)  ; CALL ChkMemErr('INIT','ROS_BACKU',IZERO) ; M%ROS_BACKU= 0.0_EB
@@ -768,6 +769,8 @@ IF (VEG_LEVEL_SET) THEN
   ALLOCATE(M%FLUX1_LS(0:IBP1,0:JBP1)); CALL ChkMemErr('INIT','FLUX1_LS',IZERO) ; M%FLUX1_LS = 0.0_EB
   ALLOCATE(M%SR_X_LS(0:IBP1,0:JBP1)); CALL ChkMemErr('INIT','SR_X_LS',IZERO)   ; M%SR_X_LS  = 0.0_EB
   ALLOCATE(M%SR_Y_LS(0:IBP1,0:JBP1)); CALL ChkMemErr('INIT','SR_Y_LS',IZERO)   ; M%SR_Y_LS  = 0.0_EB
+  ALLOCATE(M%SR_X_FM10_LS(0:IBP1,0:JBP1)); CALL ChkMemErr('INIT','SR_X_FM10_LS',IZERO)   ; M%SR_X_FM10_LS  = 0.0_EB
+  ALLOCATE(M%SR_Y_FM10_LS(0:IBP1,0:JBP1)); CALL ChkMemErr('INIT','SR_Y_FM10_LS',IZERO)   ; M%SR_Y_FM10_LS  = 0.0_EB
   ALLOCATE(M%U_LS(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','U_LS',IZERO) ; M%U_LS = 0._EB
   ALLOCATE(M%V_LS(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','V_LS',IZERO) ; M%V_LS = 0._EB
 
@@ -784,6 +787,7 @@ IF (VEG_LEVEL_SET) THEN
   ALLOCATE(M%CRUZ_CROWN_PROB(0:IBP1,0:JBP1)); CALL ChkMemErr('INIT','CRUZ_CROWN_PROB',IZERO) ; M%CRUZ_CROWN_PROB = 0.0_EB
 
 !-- Arrays for ouputs
+  ALLOCATE(M%CFB_OUT(0:IBAR,0:JBAR)); CALL ChkMemErr('INIT','CFB_OUT',IZERO); M%CFB_OUT = 0.0
   ALLOCATE(M%CRUZ_CROWN_PROB_OUT(0:IBAR,0:JBAR)); CALL ChkMemErr('INIT','CRUZ_CROWN_PROB_OUT',IZERO); M%CRUZ_CROWN_PROB_OUT = 0.0
   ALLOCATE(M%MAG_SR_OUT(0:IBAR,0:JBAR)); CALL ChkMemErr('INIT','MAG_SR_OUT',IZERO) ; M%MAG_SR_OUT = 0.0
   ALLOCATE(M%PHI_OUT(0:IBAR,0:JBAR)) ; CALL ChkMemErr('INIT','PHI_OUT',IZERO) ; M%PHI_OUT = 0.0
@@ -796,27 +800,43 @@ IF (VEG_LEVEL_SET) THEN
 !-- Array for implementing "burner" method to simulate fire over large domains with remote-sensing based fire HRRPUA
   ALLOCATE(M%HRRPUA_IN(0:IBAR,0:JBAR)) ; CALL ChkMemErr('INIT','HRRPUA_IN',IZERO) ; M%HRRPUA_IN= 0.0
 
-
-
-!----------Rothermel 'Phi' factors for effects of Wind and Slope on ROS ----------
+!---Rothermel 'Phi' factors for effects of Wind and Slope on ROS on the surface fire ----------
 !--Not to be confused with the level set value (Phi)
   ALLOCATE(M%PHI_S(0:IBP1,0:JBP1))   ; CALL ChkMemErr('INIT','PHI_S',IZERO)   ; M%PHI_S   = 0.0_EB
   ALLOCATE(M%PHI_S_X(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','PHI_S_X',IZERO) ; M%PHI_S_X = 0.0_EB
   ALLOCATE(M%PHI_S_Y(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','PHI_S_Y',IZERO) ; M%PHI_S_Y = 0.0_EB
   ALLOCATE(M%PHI_W(0:IBP1,0:JBP1))   ; CALL ChkMemErr('INIT','PHI_W',IZERO)   ; M%PHI_W   = 0.0_EB
-  ALLOCATE(M%PHI_W_X(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','PHI_W_X',IZERO) ; M%PHI_W_X = 0.0_EB
-  ALLOCATE(M%PHI_W_Y(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','PHI_W_Y',IZERO) ; M%PHI_W_Y = 0.0_EB
-  ALLOCATE(M%PHI_WS(0:IBP1,0:JBP1))  ; CALL ChkMemErr('INIT','PHI_W',IZERO)   ; M%PHI_WS  = 0.0_EB
   ALLOCATE(M%UMF(0:IBP1,0:JBP1))     ; CALL ChkMemErr('INIT','UMF',IZERO)     ; M%UMF     = 0.0_EB
-  ALLOCATE(M%UMF_X(0:IBP1,0:JBP1))   ; CALL ChkMemErr('INIT','UMF_X',IZERO)   ; M%UMF_X   = 0.0_EB
-  ALLOCATE(M%UMF_Y(0:IBP1,0:JBP1))   ; CALL ChkMemErr('INIT','UMF_Y',IZERO)   ; M%UMF_Y   = 0.0_EB
 
-!-- Normal to fireline
+!---Rothermel 'Phi' factors for effects of Wind and Slope on ROS of fire in Fuel Model 10 
+! For Scott & Reinhardt Crown fuel model ----------
+!--Not to be confused with the level set value (Phi)
+  ALLOCATE(M%PHI_S_FM10(0:IBP1,0:JBP1))   ; CALL ChkMemErr('INIT','PHI_S_FM10',IZERO)   ; M%PHI_S_FM10   = 0.0_EB
+  ALLOCATE(M%PHI_S_X_FM10(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','PHI_S_X_FM10',IZERO) ; M%PHI_S_X_FM10 = 0.0_EB
+  ALLOCATE(M%PHI_S_Y_FM10(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','PHI_S_Y_FM10',IZERO) ; M%PHI_S_Y_FM10 = 0.0_EB
+  ALLOCATE(M%PHI_W_FM10(0:IBP1,0:JBP1))   ; CALL ChkMemErr('INIT','PHI_W_FM10',IZERO)   ; M%PHI_W_FM10   = 0.0_EB
+  ALLOCATE(M%UMF_FM10(0:IBP1,0:JBP1))     ; CALL ChkMemErr('INIT','UMF_FM10',IZERO)     ; M%UMF_FM10     = 0.0_EB
+
+!-- Arrays for implementing Scott and Reinhardt crown fire model
+  ALLOCATE(M%ROS_SURF_INI_LS(0:IBP1,0:JBP1))  ; CALL ChkMemErr('INIT','ROS_SURF_INI_LS',IZERO)  ; M%ROS_SURF_INI_LS = 0.0_EB
+  ALLOCATE(M%RAC_THRESHOLD_LS(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','RAC_THRESHOLD_LS',IZERO) ; M%RAC_THRESHOLD_LS=-9.0_EB
+  ALLOCATE(M%CFB_SR_LS(0:IBP1,0:JBP1))        ; CALL ChkMemErr('INIT','CFB_SR_LS',IZERO)        ; M%CFB_SR_LS       = 0.0_EB
+
+!-- Normal to fireline for surface fire
   ALLOCATE(M%THETA_ELPS(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','THETA_ELPS',IZERO) ; M%THETA_ELPS = 0.0_EB
 
+!-- Normal to fireline for Fuel Model 10 used in Scott & Reinhardt crown fire model
+  ALLOCATE(M%THETA_ELPS_FM10(0:IBP1,0:JBP1)) ; CALL ChkMemErr('INIT','THETA_ELPS_FM10',IZERO) ; M%THETA_ELPS_FM10 = 0.0_EB
+
 !-- Arrays with names of files and LU for output files and HRRPUA input 
-  ALLOCATE(M%FN_SLCF_LS(7)) ; CALL ChkMemErr('INIT','FN_SLCF_LS',IZERO)
-  ALLOCATE(M%LU_SLCF_LS(7)) ; CALL ChkMemErr('INIT','LU_SLCF_LS',IZERO)
+  ALLOCATE(M%FN_SLCF_LS(8)) ; CALL ChkMemErr('INIT','FN_SLCF_LS',IZERO)
+  ALLOCATE(M%LU_SLCF_LS(8)) ; CALL ChkMemErr('INIT','LU_SLCF_LS',IZERO)
+
+!-- Level set work arrays
+  ALLOCATE(M%WORK1_LS(0:IBP1,0:JBP1))     ; CALL ChkMemErr('INIT','WORK1_LS',IZERO)     ; M%WORK1_LS     = 0.0_EB
+  ALLOCATE(M%WORK2_LS(0:IBP1,0:JBP1))     ; CALL ChkMemErr('INIT','WORK2_LS',IZERO)     ; M%WORK2_LS     = 0.0_EB
+  ALLOCATE(M%WORK3_LS(0:IBP1,0:JBP1))     ; CALL ChkMemErr('INIT','WORK3_LS',IZERO)     ; M%WORK3_LS     = 0.0_EB
+  ALLOCATE(M%WORK4_LS(0:IBP1,0:JBP1))     ; CALL ChkMemErr('INIT','WORK4_LS',IZERO)     ; M%WORK4_LS     = 0.0_EB
 
 
 ENDIF
