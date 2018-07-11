@@ -1,29 +1,24 @@
-&HEAD CHID='level_grassforest_SRLS1', TITLE='LS1 level ground with Scott & Reinhardt Crown Fire Modle implemented' /
+&HEAD CHID='level_grassforest_LS1', TITLE='Level Set level ground' /
 &MISC TERRAIN_CASE=.FALSE.,
       VEG_LEVEL_SET_UNCOUPLED=.TRUE.
       FLUX_LIMITER=1
-      U0=-4.,V0=0 /
-&TIME T_END=200 / LOCK_TIME_STEP=.TRUE. 
+      U0=4.,V0=0 /
+&TIME T_END=500,LOCK_TIME_STEP=.TRUE./ 
 
 - 1 mesh
-cMESH IJK=40,40,3, XB=-20,20,-20,20,0,3 / 
+&MESH IJK=60,60,3, XB=-30,30,-30,30,0,3 / 
 
-- 2 meshes, x-plane interface
-&MESH IJK=40,20,3, XB=-20,20,-20, 0,0,3 / 
-&MESH IJK=40,20,3, XB=-20,20,  0,20,0,3 / 
-
-- 2 meshes, y-plane interface
-cMESH IJK=20,40,3, XB=-20, 0,-20,20,0,3 / 
-cMESH IJK=20,40,3, XB=  0,20,-20,20,0,3 / 
-
+- 2 meshes
+cMESH IJK=30,60,3, XB=-30, 0,-30,30,0,3 / 
+cMESH IJK=30,60,3, XB=  0,30,-30,30,0,3 / 
 
 - 4 meshes equal checkerboards
-cMULT ID='lower',DX=20,DY=20,DZ=3,I_LOWER=0,I_UPPER=1,J_LOWER=0,J_UPPER=1,K_LOWER=0,K_UPPER=0 /
-cMESH IJK=20,20,3, XB=-20,0,-20,0,0,3,MULT_ID='lower' / 
+cMULT ID='lower',DX=30,DY=30,DZ=3,I_LOWER=0,I_UPPER=1,J_LOWER=0,J_UPPER=1,K_LOWER=0,K_UPPER=0 /
+cMESH IJK=30,30,3, XB=-30,0,-30,0,0,3,MULT_ID='lower' / 
 
 - 16 meshes equal checkerboards
-cMULT ID='lower',DX=10,DY=10,DZ=3,I_LOWER=0,I_UPPER=3,J_LOWER=0,J_UPPER=3,K_LOWER=0,K_UPPER=0 /
-cMESH IJK=10,10,3, XB=-20,-10,-20,-10,0,3,MULT_ID='lower' / 
+cMULT ID='lower',DX=15,DY=15,DZ=3,I_LOWER=0,I_UPPER=3,J_LOWER=0,J_UPPER=3,K_LOWER=0,K_UPPER=0 /
+cMESH IJK=15,15,3, XB=-30,-15,-30,-15,0,3,MULT_ID='lower' / 
 
 - Not "FARSITE" 
 cSURF ID = 'GRASS'
@@ -48,23 +43,7 @@ cSURF ID = 'GRASS'
       VEG_LSET_CANOPY_HEIGHT = 8
       RGB = 122,117.48 /
 
-***** some eqns and numbers for checking *************
-I_CROWN_INI = [0.01 CBH (460 + 25.9M)]^(3/2)
-ROS_INI     = I_CROWN_INI/(Hcomb*w)
-RAC         = 3/(60*CBD)
-CFB         = (ROS_SURF-ROS_INI)/(RAC-ROS_INI)
-
-CBH=3, M=1 gives I_CROWN_INI = 875 kW/m
-CBH=3, M=0 gives I_CROWN_INI = 51 kW/m, ROS_INI=51/(18000*0.313)=0.0091m/s
-
-For u=4 m/s, M=0,CBD=0.2,CBH=3
-RAC=3/(60*0.2)=0.25 m/s ok
-ROS_SURF head = 0.071
-ROS_FM10 head = 0.026
-ROS_INI       = 0.0091 ok
-CFB=(0.071-0.0091)/(0.25-0.0091)=0.26 ok
-******************************************************
-
+      VEG_LSET_CANOPY_HEIGHT = 8
 
 &SURF ID = 'GRASS AND FOREST'
       VEG_LEVEL_SET_SPREAD = .TRUE.
@@ -79,7 +58,7 @@ CFB=(0.071-0.0091)/(0.25-0.0091)=0.26 ok
       VEG_LSET_SURF_HEIGHT = 0.509
       VEG_LSET_SURF_LOAD   = 0.313
       VEG_LSET_CHAR_FRACTION = 0.2
-      VEG_LSET_CANOPY_FMC=0.0
+      VEG_LSET_CANOPY_FMC=1.0
       VEG_LSET_CANOPY_BULK_DENSITY=0.2
       VEG_LSET_CANOPY_BASE_HEIGHT = 3
       VEG_LSET_CANOPY_HEIGHT = 8
@@ -91,13 +70,12 @@ CFB=(0.071-0.0091)/(0.25-0.0091)=0.26 ok
 
 -- Ignitor fire
 &SURF ID = 'IGN FIRE0',VEG_LSET_IGNITE_TIME =0,COLOR = 'RED' /
-cVENT XB= 2, 5,-5,5,0,0,SURF_ID='IGN FIRE0' / upwind of hill
-cVENT XB=-5,5,-5,5,0,0,SURF_ID='IGN FIRE0' / upwind of hill
-&VENT XB=3,8,-4,4,0,0,SURF_ID='IGN FIRE0' / upwind of hill
+&VENT XB= -20,-18,-2,2,0,0,SURF_ID='IGN FIRE0' / 
+cVENT XB= -2,2,-2,2,0,0,SURF_ID='IGN FIRE0' / 
 
 -- Vegetation location
-&VENT XB=-20,-5,-20,20,0,0,SURF_ID='GRASS' /
-&VENT XB= -5,20,-20,20,0,0,SURF_ID='GRASS AND FOREST' /
+&VENT XB=-25, 0,-25,25,0,0,SURF_ID='GRASS' /
+&VENT XB=  0,25,-25,25,0,0,SURF_ID='GRASS AND FOREST' /
 
 -- Output
 &DUMP DT_SLCF=1 /
