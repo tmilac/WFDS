@@ -73,7 +73,7 @@ IF (FN_INPUT(1:1)==' ') THEN
    IF (MYID==0) THEN
       WRITE(LU_ERR,'(A,I4)') "SVN Revision Number: ",SVN_REVISION_NUMBER
 !     WRITE(LU_ERR,'(A,A)') "Compile Date: ",TRIM(COMPILE_DATE)
-      WRITE(LU_ERR,'(/A)')  "WFDS, June 27, 2018; based on subversion 9977 (2012) of FDS"
+      WRITE(LU_ERR,'(/A)')  "WFDS, July 10, 2018; based on subversion 9977 (2012) of FDS"
       WRITE(LU_ERR,'(/A)')  "Consult FDS Users Guide Chapter, Running FDS, for further instructions."
       WRITE(LU_ERR,'(/A)')  "Consult https://sites.google.com/site/wuifiresfiremodels, for WFDS information."
       WRITE(LU_ERR,'(/A)')  "Hit Enter to Escape..."
@@ -5668,7 +5668,8 @@ READ_SURF_LOOP: DO N=0,N_SURF
    IF (ABS(SF%CONVECTIVE_HEAT_FLUX)>ZERO_P) SF%THERMAL_BC_INDEX = CONVECTIVE_FLUX_BC
    IF (SF%THERMALLY_THICK)             SF%THERMAL_BC_INDEX = THERMALLY_THICK
    IF (SF%PROFILE==ATMOSPHERIC)        SF%THERMAL_BC_INDEX = INFLOW_OUTFLOW
-   IF (SF%VEGETATION)                  SF%THERMAL_BC_INDEX = VEG_BNDRY_FUEL
+!  IF (SF%VEGETATION)                  SF%THERMAL_BC_INDEX = VEG_BNDRY_FUEL
+   IF (SF%VEGETATION)                  SF%THERMAL_BC_INDEX = SPECIFIED_TEMPERATURE
    IF (TRIM(SF%BC_FILENAME)/='null')   SF%THERMAL_BC_INDEX = SPECIFIED_TEMPERATURE_FROM_FILE
 
    ! Set convection length scale according to THICKNESS or RADIUS

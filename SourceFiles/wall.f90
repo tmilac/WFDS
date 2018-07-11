@@ -212,7 +212,9 @@ HEAT_FLUX_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS+N_VIRTUAL_WA
          DTMP = TMP_G - WC%TMP_F
          WC%HEAT_TRANS_COEF = HEAT_TRANSFER_COEFFICIENT(IW,IIG,JJG,KKG,IOR,DTMP,SF%H_FIXED,SF%GEOMETRY,SF%CONV_LENGTH)
          WC%QCONF = WC%HEAT_TRANS_COEF*DTMP
-         
+!       if(ii==13 .and. jj==20 .and. kk==0) then
+!         print*,'veg_height,tmp_g,tmp_f',wc%veg_height,tmp_g,wc%tmp_f 
+!       endif
       CASE (NET_FLUX_BC) METHOD_OF_HEAT_TRANSFER
          
          IF (ABS(WC%TW-T_BEGIN)<= SPACING(WC%TW ) .AND. SF%RAMP_INDEX(TIME_HEAT)>=1) THEN
