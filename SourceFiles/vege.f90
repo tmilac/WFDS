@@ -2530,8 +2530,8 @@ ENDIF
 !--ROS of active crown fire (Ra) from Scott and Reinghardt model for animation in Smokeview
 IF (VEG_LEVEL_SET_SR_CROWNFIRE_MODEL) THEN 
   LU_SLCF_LS(13) = GET_FILE_NUMBER()
-  SMOKEVIEW_LABEL = 'LS Ractive S&R'
-  SMOKEVIEW_BAR_LABEL = 'LS Ractive S&R'
+  SMOKEVIEW_LABEL = 'LS Rcfb S&R'
+  SMOKEVIEW_BAR_LABEL = 'LS Rcfb S&R'
   UNITS  = '-'
   IF(NMESHES  > 1) WRITE(FN_SLCF_LS(13),CFORM) TRIM(CHID),'_',NM,'_','lsractve.sf'
   IF(NMESHES == 1) WRITE(FN_SLCF_LS(13),CFORM) TRIM(CHID),'_','lsractive.sf'
@@ -2550,8 +2550,8 @@ IF (VEG_LEVEL_SET_SR_CROWNFIRE_MODEL) THEN
       ENDIF
       WRITE(LU_SMV,'(A,5X,I3,5X,F7.2)') 'SLCT ',I,0.1
       WRITE(LU_SMV,'(A)')FN_SLCF_LS(13)
-      WRITE(LU_SMV,'(A)') 'LS Ractive'
-      WRITE(LU_SMV,'(A)') 'LS Ractive'
+      WRITE(LU_SMV,'(A)') 'LS Rcfb S&R'
+      WRITE(LU_SMV,'(A)') 'LS Rcfb S&R'
       WRITE(LU_SMV,'(A)') '-'
     ENDDO
   ENDIF
@@ -3801,7 +3801,7 @@ endif
 ! read by Smokeview
   IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. TOA(IIG,JJG) <= -1.0_EB) THEN 
     TOA(IIG,JJG)=TIME_LS
-    ROS_ACTIVE_MAG_OUT(IIG,JJG) = ROS_ACTIVE_MAG(IIG,JJG)
+    ROS_FINAL_MAG_OUT(IIG,JJG) = ROS_FINAL_MAG(IIG,JJG)
     ROS_X_OUT(IIG,JJG) = SR_X_LS(IIG,JJG)
     ROS_Y_OUT(IIG,JJG) = SR_Y_LS(IIG,JJG)
     ROS_SURF_X_OUT(IIG,JJG) = SR_X_SURF_LS(IIG,JJG)
@@ -3846,7 +3846,7 @@ endif
    CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM,COMPUTE_ROS) 
    COMPUTE_ROS = 'RSA' ; COMPUTE_FM10_SRXY=.FALSE. ; COMPUTE_RSA_SRXY=.TRUE.
    CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM,COMPUTE_ROS) 
-   CALL LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM)
+   CALL LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM,SF%VEG_LSET_MODEL_FOR_PASSIVE_ROS)
  ENDIF
  CALL LEVEL_SET_ADVECT_FLUX(NM)
  PHI_LS = PHI_LS - 0.5_EB*DT_LS*(FLUX0_LS + FLUX1_LS)
@@ -3860,7 +3860,7 @@ endif
    CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM,COMPUTE_ROS) 
    COMPUTE_ROS='RSA' ; COMPUTE_FM10_SRXY=.FALSE. ; COMPUTE_RSA_SRXY=.TRUE.
    CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM,COMPUTE_ROS) 
-   CALL LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM)
+   CALL LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM,SF%VEG_LSET_MODEL_FOR_PASSIVE_ROS)
  ENDIF
 
 ! Account for heat released by thermal elements (if present). Thermal elements are inserted and
@@ -4009,10 +4009,10 @@ ENDIF
     ROS_SURF_X_OUT(0,0:JBAR) = ROS_SURF_X_OUT(1,0:JBAR) ; ROS_SURF_X_OUT(0:IBAR,0) = ROS_SURF_X_OUT(0:IBAR,1)
     ROS_SURF_Y_OUT(0,0:JBAR) = ROS_SURF_Y_OUT(1,0:JBAR) ; ROS_SURF_Y_OUT(0:IBAR,0) = ROS_SURF_Y_OUT(0:IBAR,1)
     WRITE(LU_SLCF_LS(12)) ((SQRT(ROS_SURF_X_OUT(I,J)**2 + ROS_SURF_Y_OUT(I,J)**2),I=0,IBAR),J=0,JBAR) 
-!-- ROS Active Crown Fire, m/s for Scott and Reinhardt
+!-- ROS Final (Passive or Active) Crown Fire, m/s depends on whether Farsite or S&R is used, based on 
     WRITE(LU_SLCF_LS(13)) TIME_LS_OUT
-    ROS_ACTIVE_MAG_OUT(0,0:JBAR) = ROS_ACTIVE_MAG(1,0:JBAR) ; ROS_ACTIVE_MAG_OUT(0:IBAR,0) = ROS_ACTIVE_MAG(0:IBAR,1)
-    WRITE(LU_SLCF_LS(13)) ((ROS_ACTIVE_MAG_OUT(I,J),I=0,IBAR),J=0,JBAR) 
+    ROS_FINAL_MAG_OUT(0,0:JBAR) = ROS_FINAL_MAG(1,0:JBAR) ; ROS_FINAL_MAG_OUT(0:IBAR,0) = ROS_FINAL_MAG(0:IBAR,1)
+    WRITE(LU_SLCF_LS(13)) ((ROS_FINAL_MAG_OUT(I,J),I=0,IBAR),J=0,JBAR) 
   ENDIF
  ENDIF
 !
@@ -4405,16 +4405,17 @@ ENDIF
 END SUBROUTINE LEVEL_SET_PERIMETER_SPREAD_RATE 
 
 !************************************************************************************************
-SUBROUTINE LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM)
+SUBROUTINE LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM,MODEL_FOR_PASSIVE_ROS)
 !************************************************************************************************
 ! Following Scott & Burgan, determine if there is a crown fire, if it's active or passive, and it's 
 ! rate of spread 
 ! "Assessing Crown Fire Potential by Linking Models of Surface and Crown Fire Behavior"
 ! RMRS-RP-29, 2001
 !
+CHARACTER(25), INTENT(IN) :: MODEL_FOR_PASSIVE_ROS
 INTEGER, INTENT(IN) :: NM
 INTEGER  :: I,J
-REAL(EB) :: SR_MAG_SURF,ROS_ACTIVE_X,ROS_ACTIVE_Y,RSA_MAG
+REAL(EB) :: SR_MAG_SURF,ROS_FINAL_X,ROS_FINAL_Y,RSA_MAG
 
 CALL POINT_TO_MESH(NM)
 
@@ -4433,12 +4434,16 @@ DO J=1,NY_LS
 !if(j==25) print '(A,1x,1I3,5ES12.4)','I,PHI_LS,CFB,RSURF,RINI,RSA',i,phi_ls(i,j),cfb_sr_ls(i,j),sr_mag_surf, &
 !                                                                   ros_surf_ini_ls(i,j),ros_head_sa(i,j)
       CFB_SR_LS(I,J) = MIN(1.0_EB,CFB_SR_LS(I,J))
-      ROS_ACTIVE_X = SR_X_SURF_LS(I,J) + CFB_SR_LS(I,J)*(3.34_EB*SR_X_FM10_LS(I,J) - SR_X_SURF_LS(I,J))
-      ROS_ACTIVE_Y = SR_Y_SURF_LS(I,J) + CFB_SR_LS(I,J)*(3.34_EB*SR_Y_FM10_LS(I,J) - SR_Y_SURF_LS(I,J))
-      ROS_ACTIVE_MAG(I,J) = SQRT(ROS_ACTIVE_X**2 + ROS_ACTIVE_Y**2)
-      IF (ROS_ACTIVE_MAG(I,J) >= RAC_THRESHOLD_LS(I,J)) THEN
-        SR_X_LS(I,J) = ROS_ACTIVE_X
-        SR_Y_LS(I,J) = ROS_ACTIVE_Y
+      ROS_FINAL_X = SR_X_SURF_LS(I,J) + CFB_SR_LS(I,J)*(3.34_EB*SR_X_FM10_LS(I,J) - SR_X_SURF_LS(I,J))
+      ROS_FINAL_Y = SR_Y_SURF_LS(I,J) + CFB_SR_LS(I,J)*(3.34_EB*SR_Y_FM10_LS(I,J) - SR_Y_SURF_LS(I,J))
+      ROS_FINAL_MAG(I,J) = SQRT(ROS_FINAL_X**2 + ROS_FINAL_Y**2)
+      IF (MODEL_FOR_PASSIVE_ROS == 'SR') THEN
+        SR_X_LS(I,J) = ROS_FINAL_X
+        SR_Y_LS(I,J) = ROS_FINAL_Y
+      ENDIF
+      IF (MODEL_FOR_PASSIVE_ROS == 'FS' .AND. ROS_FINAL_MAG(I,J) >= RAC_THRESHOLD_LS(I,J)) THEN
+        SR_X_LS(I,J) = ROS_FINAL_X
+        SR_Y_LS(I,J) = ROS_FINAL_Y
       ENDIF
     ENDIF
   ENDDO
