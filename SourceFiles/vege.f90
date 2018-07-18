@@ -2432,7 +2432,7 @@ IF (VEG_LEVEL_SET_SR_CROWNFIRE_MODEL) THEN
       WRITE(LU_SMV,'(A)')FN_SLCF_LS(9)
       WRITE(LU_SMV,'(A)') 'LS Rsa'
       WRITE(LU_SMV,'(A)') 'LS Rsa'
-      WRITE(LU_SMV,'(A)') '-'
+      WRITE(LU_SMV,'(A)') 'm/s'
     ENDDO
   ENDIF
 ENDIF
@@ -2462,7 +2462,7 @@ IF (VEG_LEVEL_SET_SR_CROWNFIRE_MODEL) THEN
       WRITE(LU_SMV,'(A)')FN_SLCF_LS(10)
       WRITE(LU_SMV,'(A)') 'LS R10'
       WRITE(LU_SMV,'(A)') 'LS R10'
-      WRITE(LU_SMV,'(A)') '-'
+      WRITE(LU_SMV,'(A)') 'm/s'
     ENDDO
   ENDIF
 ENDIF
@@ -2492,7 +2492,7 @@ IF (VEG_LEVEL_SET_SR_CROWNFIRE_MODEL) THEN
       WRITE(LU_SMV,'(A)')FN_SLCF_LS(11)
       WRITE(LU_SMV,'(A)') 'LS Rini'
       WRITE(LU_SMV,'(A)') 'LS Rini'
-      WRITE(LU_SMV,'(A)') '-'
+      WRITE(LU_SMV,'(A)') 'm/s'
     ENDDO
   ENDIF
 ENDIF
@@ -2522,7 +2522,7 @@ IF (VEG_LEVEL_SET_SR_CROWNFIRE_MODEL) THEN
       WRITE(LU_SMV,'(A)')FN_SLCF_LS(12)
       WRITE(LU_SMV,'(A)') 'LS Rsurf'
       WRITE(LU_SMV,'(A)') 'LS Rsurf'
-      WRITE(LU_SMV,'(A)') '-'
+      WRITE(LU_SMV,'(A)') 'm/s'
     ENDDO
   ENDIF
 ENDIF
@@ -2552,7 +2552,7 @@ IF (VEG_LEVEL_SET_SR_CROWNFIRE_MODEL) THEN
       WRITE(LU_SMV,'(A)')FN_SLCF_LS(13)
       WRITE(LU_SMV,'(A)') 'LS Rcfb S&R'
       WRITE(LU_SMV,'(A)') 'LS Rcfb S&R'
-      WRITE(LU_SMV,'(A)') '-'
+      WRITE(LU_SMV,'(A)') 'm/s'
     ENDDO
   ENDIF
 ENDIF
@@ -2763,7 +2763,7 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
       COMPUTE_HEADROS_RSA=.FALSE.
     ENDIF
 
-!-- Scott and Reinhardt crown fire model, need head ROS for FM10
+!-- Scott and Reinhardt crown fire model
     IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='SR') THEN    
       I_CROWN_INI = (0.01_EB*SF%VEG_LSET_CANOPY_BASE_HEIGHT*(460._EB+25.9_EB*SF%VEG_LSET_CANOPY_FMC))**1.5_EB
       ROS_SURF_INI_LS(IIG,JJG)  = 1000._EB*I_CROWN_INI/(SF%VEG_LSET_SURF_LOAD*SF%VEG_LSET_HEAT_OF_COMBUSTION)
@@ -2779,9 +2779,13 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
            SF%VEG_LSET_ROTHFM10_ZEROWINDSLOPE_ROS,COMPUTE_HEADROS_FM10,COMPUTE_HEADROS_RSA, &
            SF%VEG_LSET_WAF_UNSHELTERED,0.4_EB)
 
+!---- Define values in a 2D array that flags, at each x,y location, whether the S&R method (=1) or the FARSITE method (=2) 
+!     is used to compute the passive crown fire rate of spread.
+      IF(SF%VEG_LSET_MODEL_FOR_PASSIVE_ROS == 'SR') FLAG_MODEL_FOR_PASSIVE_ROS(IIG,JJG) = 1
+      IF(SF%VEG_LSET_MODEL_FOR_PASSIVE_ROS == 'FS') FLAG_MODEL_FOR_PASSIVE_ROS(IIG,JJG) = 2
+!if(jjg==30)print '(A,A,1x,2I3)','model for passive ros,IIG,flag ',sf%veg_lset_model_for_passive_ros,i,flag_model_for_passive_ros(i,j)
+
       COMPUTE_HEADROS_FM10=.FALSE. ; COMPUTE_FM10_SRXY=.FALSE. ; COMPUTE_RSA_SRXY=.FALSE.
-!     CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM,COMPUTE_FM10_SRXY,COMPUTE_RSA_SRXY) 
-!     COMPUTE_RSA_SRXY=.FALSE.
     ENDIF
 
 !-- Cruz et al. crown fire head fire ROS model (needed to determine time step based on surface and crown fire head ROS)
@@ -3846,7 +3850,7 @@ endif
    CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM,COMPUTE_ROS) 
    COMPUTE_ROS = 'RSA' ; COMPUTE_FM10_SRXY=.FALSE. ; COMPUTE_RSA_SRXY=.TRUE.
    CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM,COMPUTE_ROS) 
-   CALL LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM,SF%VEG_LSET_MODEL_FOR_PASSIVE_ROS)
+   CALL LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM)
  ENDIF
  CALL LEVEL_SET_ADVECT_FLUX(NM)
  PHI_LS = PHI_LS - 0.5_EB*DT_LS*(FLUX0_LS + FLUX1_LS)
@@ -3860,7 +3864,7 @@ endif
    CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM,COMPUTE_ROS) 
    COMPUTE_ROS='RSA' ; COMPUTE_FM10_SRXY=.FALSE. ; COMPUTE_RSA_SRXY=.TRUE.
    CALL LEVEL_SET_PERIMETER_SPREAD_RATE(NM,COMPUTE_ROS) 
-   CALL LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM,SF%VEG_LSET_MODEL_FOR_PASSIVE_ROS)
+   CALL LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM)
  ENDIF
 
 ! Account for heat released by thermal elements (if present). Thermal elements are inserted and
@@ -4405,17 +4409,16 @@ ENDIF
 END SUBROUTINE LEVEL_SET_PERIMETER_SPREAD_RATE 
 
 !************************************************************************************************
-SUBROUTINE LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM,MODEL_FOR_PASSIVE_ROS)
+SUBROUTINE LEVEL_SET_SR_CROWNFIRE_OR_NOT(NM)
 !************************************************************************************************
 ! Following Scott & Burgan, determine if there is a crown fire, if it's active or passive, and it's 
 ! rate of spread 
 ! "Assessing Crown Fire Potential by Linking Models of Surface and Crown Fire Behavior"
 ! RMRS-RP-29, 2001
 !
-CHARACTER(25), INTENT(IN) :: MODEL_FOR_PASSIVE_ROS
 INTEGER, INTENT(IN) :: NM
 INTEGER  :: I,J
-REAL(EB) :: SR_MAG_SURF,ROS_FINAL_X,ROS_FINAL_Y,RSA_MAG
+REAL(EB) :: SR_MAG_SURF,ROS_FINAL_X,ROS_FINAL_Y
 
 CALL POINT_TO_MESH(NM)
 
@@ -4426,22 +4429,19 @@ DO J=1,NY_LS
     IF(SR_MAG_SURF <= ROS_SURF_INI_LS(I,J)) THEN
       CYCLE
     ELSE
-!     RSA_MAG = SQRT(SR_X_RSA_LS(I,J)**2 + SR_Y_RSA_LS(I,J)**2)
-!     CFB_SR_LS(I,J) = (SR_MAG_SURF - ROS_SURF_INI_LS(I,J))/(RSA_MAG - ROS_SURF_INI_LS(I,J))
-!if(j==30) print '(A,1x,1I3,5ES12.4)','I,PHI_LS,CFB,RSURF,RINI,RSA',i,phi_ls(i,j),cfb_sr_ls(i,j),sr_mag_surf, &
-!                                                                   ros_surf_ini_ls(i,j),rsa_mag
+!if(j==30) print '(A,1x,1I3,5ES12.4,1I3)','I,PHI_LS,CFB,RSURF,RINI,RSA,Flag',i,phi_ls(i,j),cfb_sr_ls(i,j),sr_mag_surf, &
+!                                                  ros_surf_ini_ls(i,j),ros_head_sa(i,j),flag_model_for_passive_ros(i,j)
       CFB_SR_LS(I,J) = (SR_MAG_SURF - ROS_SURF_INI_LS(I,J))/(ROS_HEAD_SA(I,J) - ROS_SURF_INI_LS(I,J))
-!if(j==25) print '(A,1x,1I3,5ES12.4)','I,PHI_LS,CFB,RSURF,RINI,RSA',i,phi_ls(i,j),cfb_sr_ls(i,j),sr_mag_surf, &
-!                                                                   ros_surf_ini_ls(i,j),ros_head_sa(i,j)
       CFB_SR_LS(I,J) = MIN(1.0_EB,CFB_SR_LS(I,J))
       ROS_FINAL_X = SR_X_SURF_LS(I,J) + CFB_SR_LS(I,J)*(3.34_EB*SR_X_FM10_LS(I,J) - SR_X_SURF_LS(I,J))
       ROS_FINAL_Y = SR_Y_SURF_LS(I,J) + CFB_SR_LS(I,J)*(3.34_EB*SR_Y_FM10_LS(I,J) - SR_Y_SURF_LS(I,J))
       ROS_FINAL_MAG(I,J) = SQRT(ROS_FINAL_X**2 + ROS_FINAL_Y**2)
-      IF (MODEL_FOR_PASSIVE_ROS == 'SR') THEN
+
+      IF (FLAG_MODEL_FOR_PASSIVE_ROS(I,J) == 1) THEN !S&R
         SR_X_LS(I,J) = ROS_FINAL_X
         SR_Y_LS(I,J) = ROS_FINAL_Y
       ENDIF
-      IF (MODEL_FOR_PASSIVE_ROS == 'FS' .AND. ROS_FINAL_MAG(I,J) >= RAC_THRESHOLD_LS(I,J)) THEN
+      IF (FLAG_MODEL_FOR_PASSIVE_ROS(I,J) == 2 .AND. ROS_FINAL_MAG(I,J) >= RAC_THRESHOLD_LS(I,J)) THEN !Farsite
         SR_X_LS(I,J) = ROS_FINAL_X
         SR_Y_LS(I,J) = ROS_FINAL_Y
       ENDIF
