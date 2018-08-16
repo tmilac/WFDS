@@ -2940,6 +2940,11 @@ REAL(EB), POINTER, DIMENSION(:,:) :: PHI_W_P=>NULL(),PHI_WS_P=>NULL(),THETA_ELPS
 THETA_ELPS_P => WORK1_LS
 PHI_W_P      => WORK2_LS !don't need this to be an array, except for downstread diagnostics
 
+! Initialize S&R coefficients
+PHI_W_X_SA = 0.0_EB
+PHI_W_Y_SA = 0.0_EB
+PHI_W_SA   = 0.0_EB
+
 !print*,'n_csvf',n_csvf
 !print*,'crown_veg',crown_veg
 !print*,'k,z(k-1),z(k)',k,z(k-1),z(k)
@@ -3034,12 +3039,18 @@ CONSFCTR = C_ROTH * (3.281_EB**B_ROTH) * (VEG_BETA / BETA_OP_ROTH)**(-E_ROTH)
 !PHI_W_P(I,J) =  SQRT(PHI_W_X**2 + PHI_W_Y**2) 
 
 UMF_MAG = SQRT(UMF_X**2 + UMF_Y**2)
-PHI_W_X = CONSFCTR*UMF_MAG**B_ROTH*UMF_X/UMF_MAG
-PHI_W_Y = CONSFCTR*UMF_MAG**B_ROTH*UMF_Y/UMF_MAG
-PHI_W_P(I,J) = SQRT(PHI_W_X**2 + PHI_W_Y**2) 
+IF (UMF_MAG > 0.0_EB) THEN
+  PHI_W_X = CONSFCTR*UMF_MAG**B_ROTH*UMF_X/UMF_MAG
+  PHI_W_Y = CONSFCTR*UMF_MAG**B_ROTH*UMF_Y/UMF_MAG
+  PHI_W_P(I,J) = SQRT(PHI_W_X**2 + PHI_W_Y**2) 
+ELSE
+  PHI_W_X = 0.0_EB
+  PHI_W_Y = 0.0_EB
+  PHI_W_P(I,J) = 0.0_EB 
+ENDIF
 
-!Computations for Rsa during call for surface fire ROS
-IF(COMPUTE_HEADROS_RSA) THEN
+!Computations for S&R crown model's Rsa during call for surface fire ROS
+IF(COMPUTE_HEADROS_RSA .AND. UMF_MAG > 0.0_EB) THEN
   FCTR_U6m  = 3._EB/(200.4_EB*CANOPY_BULK_DENSITY*ZEROWINDSLOPE_ROS_FM10) - 1._EB - PHI_S_FM10(I,J)
   FCTR_U6m  = MAX(0.0_EB,FCTR_U6m) !catches case when slope dominates
   UMF_6M_FROM_SACOMPUTE  = 1.14_EB*FCTR_U6m**0.7_EB
