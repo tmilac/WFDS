@@ -73,7 +73,7 @@ IF (FN_INPUT(1:1)==' ') THEN
    IF (MYID==0) THEN
       WRITE(LU_ERR,'(A,I4)') "SVN Revision Number: ",SVN_REVISION_NUMBER
 !     WRITE(LU_ERR,'(A,A)') "Compile Date: ",TRIM(COMPILE_DATE)
-      WRITE(LU_ERR,'(/A)')  "WFDS, August 15, 2018; based on subversion 9977 (2012) of FDS"
+      WRITE(LU_ERR,'(/A)')  "WFDS, August 27, 2018; based on subversion 9977 (2012) of FDS"
       WRITE(LU_ERR,'(/A)')  "Consult FDS Users Guide Chapter, Running FDS, for further instructions."
       WRITE(LU_ERR,'(/A)')  "Consult https://sites.google.com/site/wuifiresfiremodels, for WFDS information."
       WRITE(LU_ERR,'(/A)')  "Hit Enter to Escape..."
@@ -5180,7 +5180,7 @@ READ_SURF_LOOP: DO N=0,N_SURF
    
    ! Level set vegetation fire spread specific
 
-   IF (VEG_LSET_FIREBASE_TIME == -1._EB) THEN !residence time of fire
+   IF (VEG_LSET_FIREBASE_TIME == -1._EB) THEN !residence time of fire in seconds
      SF%VEG_LSET_FIREBASE_TIME  = 75600._EB/VEG_LSET_SIGMA !From Anderson
    ELSE
      SF%VEG_LSET_FIREBASE_TIME  = VEG_LSET_FIREBASE_TIME !from input file
@@ -5898,7 +5898,7 @@ VEG_LSET_CRUZ_PROB_ACTIVE    = 999._EB
 VEG_LSET_CRUZ_PROB_CROWN     = 999._EB
 VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL = 'ROTHERMEL'
 VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL   = 'NONE'
-VEG_LSET_MODEL_FOR_PASSIVE_ROS       = 'SR' !default treatment of ROS between surface and active crown fire is S&R
+VEG_LSET_MODEL_FOR_PASSIVE_ROS = 'SR' !default treatment of ROS between surface and active crown fire is S&R (FS)
 VEG_LSET_WAF_UNSHELTERED     = -99._EB
 VEG_LSET_WAF_SHELTERED       = -99._EB
 VEG_LSET_CROWNFIRE_ANGLE     = 180._EB !degrees, Maximum bound for implementing Cruz crown fire model, 180 means ROShead=CrownROS everywhere

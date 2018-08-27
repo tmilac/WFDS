@@ -2766,8 +2766,10 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
            SF%VEG_LSET_ROTHFM10_ZEROWINDSLOPE_ROS,COMPUTE_HEADROS_FM10,COMPUTE_HEADROS_RSA, &
            SF%VEG_LSET_WAF_UNSHELTERED,0.4_EB)
 
-!---- Define values in a 2D array that flags, at each x,y location, whether the S&R method (=1) or the FARSITE method (=2) 
-!     is used to compute the passive crown fire rate of spread.
+!---- Define values in a 2D array that flags, at each x,y location which method is used to compute
+!     the passive crown fire rate of spread:
+!     1 = S&R method, Rfinal=Ra=Rs+CFB(3.35R10+Rs)  
+!     2 = FARSITE method, Rfinal=Rs for Ra<RAC, Rfinal=Ra for Ra>=RAC  
       IF(SF%VEG_LSET_MODEL_FOR_PASSIVE_ROS == 'SR') FLAG_MODEL_FOR_PASSIVE_ROS(IIG,JJG) = 1
       IF(SF%VEG_LSET_MODEL_FOR_PASSIVE_ROS == 'FS') FLAG_MODEL_FOR_PASSIVE_ROS(IIG,JJG) = 2
 !if(jjg==30)print '(A,A,1x,2I3)','model for passive ros,IIG,flag ',sf%veg_lset_model_for_passive_ros,i,flag_model_for_passive_ros(i,j)
@@ -3343,17 +3345,17 @@ THETA_ELPS(I,J) = ATAN2(V10PH,U10PH)
 THETA_ELPS(I,J) = PIO2 - THETA_ELPS(I,J)
 IF (THETA_ELPS(I,J) < 0.0_EB) THETA_ELPS(I,J) = 2.0_EB*PI + THETA_ELPS(I,J)
 
-    CFB_LS(I,J) = 0.0_EB
+    MASSPUA_CANOPY_CONSUMED(I,J) = 0.0_EB
     CRLOAD = CBD*VERT_CANOPY_EXTENT
     CAC = CROSA*CBD/3._EB
     IF (CAC >= 1._EB) THEN !active crown fire
       ROS_HEAD_CROWN(I,J) = CROSA*MPM_TO_MPS !convert m/min to m/s
       ROS_HEAD(I,J) = ROS_HEAD_CROWN(I,J)
-      CFB_LS(I,J) = CRLOAD
+      MASSPUA_CANOPY_CONSUMED(I,J) = CRLOAD
     ELSE !passive crown fire
       ROS_HEAD_CROWN(I,J) = CROSP*MPM_TO_MPS
       ROS_HEAD(I,J) = ROS_HEAD_CROWN(I,J)
-      CFB_LS(I,J) = CRLOAD*MAX(1.0_EB, (PROB - PROB_CROWN)/(1._EB - PROB_CROWN))
+      MASSPUA_CANOPY_CONSUMED(I,J) = CRLOAD*MAX(1.0_EB, (PROB - PROB_CROWN)/(1._EB - PROB_CROWN))
     ENDIF
   ENDIF
 ENDIF MIMIC_CRUZ_METHOD
@@ -3376,10 +3378,10 @@ PROB_MIN_MAX_METHOD: IF (PROB_CROWN > 1._EB)  THEN !use
   ENDIF
 
 !Compute crown fraction burned (kg/m^2) for use in QCONF (heat input to atmosphere)
-  CFB_LS(I,J) = 0.0_EB
+  MASSPUA_CANOPY_CONSUMED(I,J) = 0.0_EB
   IF (PROB >= PROB_PASSIVE) THEN
     CRLOAD = CBD*VERT_CANOPY_EXTENT
-    CFB_LS(I,J) = CRLOAD*MAX(1.0_EB, (PROB - PROB_PASSIVE)/(PROB_ACTIVE - PROB_PASSIVE))
+    MASSPUA_CANOPY_CONSUMED(I,J) = CRLOAD*MAX(1.0_EB, (PROB - PROB_PASSIVE)/(PROB_ACTIVE - PROB_PASSIVE))
   ENDIF
 ENDIF PROB_MIN_MAX_METHOD
 
@@ -3410,7 +3412,7 @@ INTEGER :: J_FLANK,I,II,IIG,IIO,IOR,IPC,IW,J,JJ,JJG,JJO,KK,KKG,KKO,NOM
 INTEGER :: IDUM,JDUM,KDUM,KGRID,KWIND
 !LOGICAL :: IGNITION = .FALSE.
 REAL(EB) :: ARO,BURNTIME,BURNOUT_FCTR,BT,FB_TIME_FCTR,FLI,HEAD_WIDTH_FCTR,GRIDCELL_FRACTION,GRIDCELL_TIME, &
-            I_CROWN_INI,I_SURF,IGNITION_WIDTH_Y,MASSPUA_CANOPY_BURNED,RFIREBASE_TIME,RGRIDCELL_TIME,ROS_FLANK1, &
+            I_CROWN_INI,I_SURF,IGNITION_WIDTH_Y,RFIREBASE_TIME,RGRIDCELL_TIME,ROS_FLANK1, &
             ROS_MAG,R_BURNOUT_FCTR,SHF,TE_TIME_FACTOR,TIME_LS_LAST,TOTAL_FUEL_LOAD,VERT_CANOPY_EXTENT
 REAL(EB) :: COSDPHIU,DPHIDX,DPHIDY,DPHIDOTU,DPHIMAG,XI,YJ,ZK,RCP_GAS,TE_HRRPUV,TE_HRR_TOTAL
 REAL(EB) :: PHI_CHECK,LSET_PHI_F,LSET_PHI_V
@@ -3541,28 +3543,7 @@ DO WHILE (TIME_LS < T_FINAL)
 
   IF (.NOT. SF%VEG_LSET_SPREAD) CYCLE WALL_CELL_LOOP1
 
-!-- Get head fire ROS for surface fire from Rothermel and crown fire from Scott and Reinhardt crown fire model (2001; RMRS-RP-29)
-
-! IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='SR' .AND. VEG_LEVEL_SET_UNCOUPLED) THEN    
-!
-!   COMPUTE_HEADROS_FM10=.FALSE. ; COMPUTE_HEADROS_RSA=.FALSE.
-!
-!   CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_BETA,SF%VEG_LSET_SIGMA,SF%VEG_LSET_SURF_HEIGHT, &
-!        SF%VEG_LSET_CANOPY_HEIGHT,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS, &
-!         SF%VEG_LSET_ROTHFM10_ZEROWINDSLOPE_ROS,COMPUTE_HEADROS_FM10,COMPUTE_HEADROS_RSA, &
-!         SF%VEG_LSET_WAF_UNSHELTERED,SF%VEG_LSET_WAF_SHELTERED)
-!
-!   VEG_BETA_FM10 = 0.0173_EB !weighted packing ratio for fuel model 10
-!   VEG_SV_FM10   = 5788._EB !weighted surface-to-volume ratio for fuel model 10
-!   COMPUTE_HEADROS_FM10=.TRUE. ; COMPUTE_HEADROS_RSA=.FALSE.
-!
-!   CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,VEG_BETA_FM10,VEG_SV_FM10,SF%VEG_LSET_SURF_HEIGHT, &
-!         SF%VEG_LSET_CANOPY_HEIGHT,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS,     &
-!         SF%VEG_LSET_ROTHFM10_ZEROWINDSLOPE_ROS,COMPUTE_HEADROS_FM10,COMPUTE_HEADROS_RSA, &
-!         SF%VEG_LSET_WAF_UNSHELTERED,0.4_EB)
-! ENDIF
-
-! --- For CFIS crown fire model, compute dot product between normal to fireline and wind direction. If location 
+! --- For the CFIS crown fire model, compute dot product between normal to fireline and wind direction. If location 
 !     on fire perimeter is between the flank and backing fires, then skip computation of crown fire ROS and use already 
 !     computed surface fire ROS
 
@@ -3607,7 +3588,7 @@ DO WHILE (TIME_LS < T_FINAL)
 !---Ellipse assumption with AU grassland head fire ROS for infinite head width
       IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='AU GRASS' .AND. .NOT. SF%VEG_LSET_BURNER) CALL AUGRASS_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_EFFM)
 
-!---Ellipse assumption with Rothermel head fire ROS (== FARSITE)
+!---Ellipse assumption with Rothermel head fire ROS (== FARSITE) and compute ROS_FM10 if S&R crown model is implemented
       IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROTHERMEL' .AND. .NOT. SF%VEG_LSET_BURNER) THEN 
         CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_BETA,SF%VEG_LSET_SIGMA,SF%VEG_LSET_SURF_HEIGHT, &
              SF%VEG_LSET_CANOPY_HEIGHT,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS, &
@@ -3615,6 +3596,19 @@ DO WHILE (TIME_LS < T_FINAL)
               SF%VEG_LSET_WAF_UNSHELTERED,SF%VEG_LSET_WAF_SHELTERED)
       ENDIF
 
+!-- Scott and Reinhardt crown fire model
+      IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='SR' .AND. .NOT. SF%VEG_LSET_BURNER) THEN 
+!---- Wind, combined wind & slope, midflame windspeed factors, and head ROS for Fuel Model 10 at IIG,JJG
+        COMPUTE_HEADROS_FM10 = .TRUE.
+        VEG_BETA_FM10 = 0.0173_EB !weighted packing ratio for fuel model 10
+        VEG_SV_FM10   = 5788._EB*0.01_EB !weighted surface-to-volume ratio in 1/cm for fuel model 10
+        CALL ROTH_WINDANDSLOPE_COEFF_HEADROS(NM,IIG,JJG,KKG,VEG_BETA_FM10,VEG_SV_FM10,SF%VEG_LSET_SURF_HEIGHT, &
+             SF%VEG_LSET_CANOPY_HEIGHT,SF%VEG_LSET_CANOPY_BULK_DENSITY,SF%VEG_LSET_ROTH_ZEROWINDSLOPE_ROS,     &
+             SF%VEG_LSET_ROTHFM10_ZEROWINDSLOPE_ROS,COMPUTE_HEADROS_FM10,COMPUTE_HEADROS_RSA, &
+             SF%VEG_LSET_WAF_UNSHELTERED,0.4_EB)
+        COMPUTE_HEADROS_FM10=.FALSE. ; COMPUTE_FM10_SRXY=.FALSE. ; COMPUTE_RSA_SRXY=.FALSE.
+      ENDIF
+    
 !--- Cruz et al. crown fire head fire ROS model
       IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='CRUZ' .AND. .NOT. SF%VEG_LSET_BURNER) THEN
 ! --- Compute dot product between normal to fireline and wind direction. If location on fire perimeter is between the flank
@@ -3660,13 +3654,14 @@ DO WHILE (TIME_LS < T_FINAL)
 !and out of the grid cell (FB_TIME_FCTR).
 
     HRRPUA_OUT(IIG,JJG) = 0.0 !kW/m^2 
-    TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
+    IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='SR') MASSPUA_CANOPY_CONSUMED(IIG,JJG) = &
+                  CFB_SR_LS(IIG,JJG)*SF%VEG_LSET_CANOPY_BULK_DENSITY*(SF%VEG_LSET_CANOPY_HEIGHT-SF%VEG_LSET_CANOPY_BASE_HEIGHT) 
+    TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + MASSPUA_CANOPY_CONSUMED(IIG,JJG)
 
     IF_FIRELINE_PASSAGE: IF (PHI_LS(IIG,JJG) >= -SF%VEG_LSET_PHIDEPTH .AND. .NOT. SF%VEG_LSET_BURNER .AND. &
                              .NOT. VEG_LEVEL_SET_BURNERS_FOR_FIRELINE) THEN 
 
       WC%LSET_FIRE = .TRUE.
-!     TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + CFB_LS(IIG,JJG)
       SHF = (1.0_EB-SF%VEG_CHAR_FRACTION)*SF%VEG_LSET_HEAT_OF_COMBUSTION*TOTAL_FUEL_LOAD*RFIREBASE_TIME !max surface heat flux, W/m^2
 !if(iig==31 .and. jjg==49 .and. nm==5) print '(A,2x,5ES12.4)','time, charfrac,Hc,w,rfbt =', & 
 !            t_cfd,sf%veg_char_fraction,sf%veg_lset_heat_of_combustion,total_fuel_load,rfirebase_time
@@ -3686,15 +3681,15 @@ DO WHILE (TIME_LS < T_FINAL)
         WC%VEG_HEIGHT = 0.0_EB
         BURN_TIME_LS(IIG,JJG) = BURN_TIME_LS(IIG,JJG) + DT_LS
 
-if(iig==46 .and. jjg==49 .and. nm==5) then 
-   print '(A,2x,7ES12.4)','----time dx>fd, ros, bt, gct, fbt, fctr, shf =',t_cfd,ros_mag,bt,gridcell_time,sf%veg_lset_firebase_time, &
-                                                                           fb_time_fctr,-shf*0.001_EB
-   print '(A,2x,1ES12.4,L2)','cell fract, lset_fire =',gridcell_fraction,wc%lset_fire
+!if(iig==46 .and. jjg==49 .and. nm==5) then 
+!   print '(A,2x,7ES12.4)','----time dx>fd, ros, bt, gct, fbt, fctr, shf =',t_cfd,ros_mag,bt,gridcell_time,sf%veg_lset_firebase_time, &
+!                                                                          fb_time_fctr,-shf*0.001_EB
+!   print '(A,2x,1ES12.4,L2)','cell fract, lset_fire =',gridcell_fraction,wc%lset_fire
 !   print '(A,2x,4ES12.4,L2)','----time dtdx>dtfb, shf kW/m2, fb_time_fctr, cell fract, lset_fire =',t_cfd,-shf*0.001_EB,fb_time_fctr, &
 !                              gridcell_fraction,wc%lset_fire
 !   print '(A,2x,7ES12.4)','ros, hcomb, fuel load, fbt, cfb, probcruz, probin',ros_mag,sf%veg_lset_heat_of_combustion,total_fuel_load,  &
 !                              firebase_time,cfb_ls(iig,jjg),CRUZ_CROWN_PROB(IIG,JJG),sf%veg_lset_cruz_prob_crown
-endif
+!endif
         WC%VEG_LSET_SURFACE_HEATFLUX = -SHF*FB_TIME_FCTR
       ENDIF
 
@@ -3815,11 +3810,11 @@ endif
 !   RSA_X_OUT(IIG,JJG) = SR_X_RSA_LS(IIG,JJG)
     RSA_Y_OUT(IIG,JJG) = SR_Y_RSA_LS(IIG,JJG)
     RINI_OUT(IIG,JJG)  = ROS_SURF_INI_LS(IIG,JJG)
-    MASSPUA_CANOPY_BURNED = 0.0_EB
-    IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='CRUZ') MASSPUA_CANOPY_BURNED = CFB_LS(IIG,JJG) 
-    IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='SR') &
-         MASSPUA_CANOPY_BURNED = CFB_SR_LS(IIG,JJG)*SF%VEG_LSET_CANOPY_BULK_DENSITY*(SF%VEG_LSET_CANOPY_HEIGHT-SF%VEG_LSET_CANOPY_BASE_HEIGHT) 
-    TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + MASSPUA_CANOPY_BURNED
+!   MASSPUA_CANOPY_BURNED = 0.0_EB
+!   IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='CRUZ') MASSPUA_CANOPY_BURNED = CFB_LS(IIG,JJG) 
+!   IF (SF%VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL=='SR') &
+!        MASSPUA_CANOPY_BURNED = CFB_SR_LS(IIG,JJG)*SF%VEG_LSET_CANOPY_BULK_DENSITY*(SF%VEG_LSET_CANOPY_HEIGHT-SF%VEG_LSET_CANOPY_BASE_HEIGHT) 
+    TOTAL_FUEL_LOAD = SF%VEG_LSET_SURF_LOAD + MASSPUA_CANOPY_CONSUMED(IIG,JJG)
     FLI = SQRT(SR_Y_LS(IIG,JJG)**2 + SR_X_LS(IIG,JJG)**2)*(SF%VEG_LSET_HEAT_OF_COMBUSTION*0.001_EB)* &
          (1.0_EB-SF%VEG_CHAR_FRACTION)*TOTAL_FUEL_LOAD
     FLI_OUT(IIG,JJG) = FLI !kW/m
