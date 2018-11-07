@@ -2707,6 +2707,11 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
   ROS_FLANK(IIG,JJG) = SF%VEG_LSET_ROS_FLANK
   ROS_BACKU(IIG,JJG) = SF%VEG_LSET_ROS_BACK
   WIND_EXP(IIG,JJG)  = SF%VEG_LSET_WIND_EXP
+
+!Used ROSvsU model with cosine determination of ROS along fire perimenter
+  IF (.NOT. SF%VEG_LSET_ELLIPSE .AND. SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROSvsU' .AND. .NOT. SF%VEG_LSET_BURNER) THEN    
+    CALL ROSVSU_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_SURF_EFFM,SF%VEG_LSET_UAVG_K,SF%VEG_LSET_UAVG_TIME)
+  ENDIF
   
 !If any surfaces uses tan^2 function for slope, tan^2 will be used throughout simulation
   IF (SF%VEG_LSET_TAN2) LSET_TAN2=.TRUE.
@@ -2718,15 +2723,15 @@ LSET_INIT_WALL_CELL_LOOP: DO IW=1,N_EXTERNAL_WALL_CELLS+N_INTERNAL_WALL_CELLS
     IF (.NOT. LSET_ELLIPSE) LSET_ELLIPSE=.TRUE.
 
 !-- AU grassland fire, head ROS at IIG,JJG assunig infinite head width
-    IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='AU GRASS' .AND. .NOT.SF%VEG_LSET_BURNER) & 
-          CALL AUGRASS_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_SURF_EFFM)
+    IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='AU GRASS') CALL AUGRASS_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT, & 
+                                                                                  SF%VEG_LSET_SURF_EFFM,SF%VEG_LSET_UAVG_K)
 !     UMAG = SQRT(U_LS(IIG,JJG)**2 + V_LS(IIG,JJG)**2)
 !     ROS_HEAD_SURF(IIG,JJG)  = (0.165_EB + 0.534_EB*UMAG)*EXP(-0.108*SF%VEG_LSET_SURF_EFFM)
 !   ENDIF
 
 !---Ellipse assumption with WFDS derived head ROS as a fuction of a local wind velocity measure
       IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROSvsU' .AND. .NOT. SF%VEG_LSET_BURNER) &
-           CALL ROSVSU_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_UAVG_K,SF%VEG_LSET_UAVG_TIME)
+           CALL ROSVSU_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_SURF_EFFM,SF%VEG_LSET_UAVG_K,SF%VEG_LSET_UAVG_TIME)
 
 !-- Find Rothermel surface veg head fire ROS at IIG,JJG
     IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROTHERMEL') THEN    
@@ -3146,7 +3151,6 @@ ELSE
   UMF(I,J)   = SQRT(UMF_X**2 + UMF_Y**2) !used in LS vs FS paper
 ! UMF(I,J) = UMF(I,J) + (((PHI_S(I,J) * (VEG_BETA / BETA_OP_ROTH)**E_ROTH)/C_ROTH)**(1/B_ROTH))*0.3048
   ROS_HEAD_SURF(I,J)    = ZEROWINDSLOPE_ROS*(1.0_EB + PHI_WS)    !used in LS vs FS paper
-! ROS_HEAD_SURF(I,J)  = 0.099_EB + 0.095_EB*UMF(I,J)*0.0167_EB + 0.0025_EB*0.000278_EB*UMF(I,J)**2 !WFDS based empirical relation
   IF(COMPUTE_HEADROS_RSA) ROS_HEAD_SA(I,J) = ZEROWINDSLOPE_ROS*(1.0_EB + PHI_WS_SA) !Rsa
 !if(compute_headros_rsa .and. j==25) print '(A,1x,1I3,4ES12.4)','I,phi_s_fm10,Roo,phi_ws_sa,rsa',i,phi_s_fm10(i,j),zerowindslope_ros, &
 !                                                                phi_ws_sa,ros_head(i,j)
@@ -3162,12 +3166,12 @@ ENDIF
 END SUBROUTINE ROTH_WINDANDSLOPE_COEFF_HEADROS
 !
 !************************************************************************************************
-SUBROUTINE AUGRASS_HEADROS(NM,I,J,K,VEG_HT,VEG_MOIST)
+SUBROUTINE AUGRASS_HEADROS(NM,I,J,K,VEG_HT,VEG_MOIST,UAVG_K)
 !************************************************************************************************
 !
 ! Compute the magnitude of the head fire from an empirical AU grass fire formula
 
-INTEGER,  INTENT(IN) :: I,J,K,NM
+INTEGER,  INTENT(IN) :: I,J,K,NM,UAVG_K
 REAL(EB), INTENT(IN) :: VEG_HT,VEG_MOIST
 INTEGER  :: KDUM,KWIND
 REAL(EB) :: FCTR1,FCTR2,U2MAGL,UMAG,V2MAGL,WAF_2MAGL,Z2MAGL,ZWFDS 
@@ -3221,6 +3225,12 @@ IF (ZWFDS > Z2MAGL .AND. .NOT. UNIFORM_UV) THEN
    V2MAGL    = WAF_2MAGL*V(I,J,K)
 ENDIF
 
+! --- Use user supplied grid index to specifiy U2MAGL
+IF (UAVG_K /= -1) THEN
+  U2MAGL = U(I,J,UAVG_K)
+  V2MAGL = V(I,J,UAVG_K)
+ENDIF
+
 !Theta_elps, after adjustment below, is angle of direction (0 to 2pi) of highest spread rate
 !0<=theta_elps<=2pi as measured clockwise from Y-axis. ATAN2(y,x) is the angle, measured in the
 !counterclockwise direction, between the positive x-axis and the line through (0,0) and (x,y)
@@ -3241,13 +3251,13 @@ ROS_HEAD_SURF(I,J)  = (0.165_EB + 0.534_EB*UMAG)*EXP(-0.108*VEG_MOIST)
 END SUBROUTINE AUGRASS_HEADROS
 !
 !************************************************************************************************
-SUBROUTINE ROSVSU_HEADROS(NM,I,J,K,VEG_HT,UAVG_K,UAVG_TIME)
+SUBROUTINE ROSVSU_HEADROS(NM,I,J,K,VEG_HT,VEG_MOIST,UAVG_K,UAVG_TIME)
 !************************************************************************************************
 !
 ! Compute the magnitude of the head fire as a function of the local wind from a given formula
 !
 INTEGER,  INTENT(IN) :: I,J,K,NM,UAVG_K
-REAL(EB), INTENT(IN) :: VEG_HT,UAVG_TIME
+REAL(EB), INTENT(IN) :: VEG_HT,VEG_MOIST,UAVG_TIME
 INTEGER  :: KDUM,KWIND
 REAL(EB) :: FCTR1,FCTR2,U2MAGL,UMAG,V2MAGL,WAF_2MAGL,Z2MAGL,ZWFDS 
 LOGICAL  :: UNIFORM_UV
@@ -3328,26 +3338,36 @@ UMF(I,J) = SQRT(U_LS(I,J)**2 + V_LS(I,J)**2)*60._EB !m/min place holder until pr
 !--Empirical relation based on WFDS runs in C064 AU grassland experiment with M=6
 
 !Use instantaneous umag in empirical ROS vs umag equation
-UMAG = SQRT(U2MAGL**2 + V2MAGL**2)
-ROS_HEAD_SURF(I,J)  = 0.099_EB + 0.095_EB*UMAG + 0.0025_EB*UMAG**2
-
-!Find time average of Umag and use in emprical ROS vs umag equation
-U_LS_AVG(I,J)  = U_LS_AVG(I,J) + U2MAGL
-V_LS_AVG(I,J)  = V_LS_AVG(I,J) + V2MAGL
-NSUM_T_UAVG_LS = NSUM_T_UAVG_LS + 1
-SUM_T_UAVG_LS  = SUM_T_UAVG_LS + DT_LS
-
-IF (FIRST_AVG_FLAG_LS == 0) THEN !using running average until time reaches duration of averaging time window
-  UMAG = SQRT(U_LS_AVG(I,J)**2 + V_LS_AVG(I,J)**2)/REAL(NSUM_T_UAVG_LS,EB)
+IF (UAVG_TIME == 0.0_EB) THEN 
+  UMAG = SQRT(U2MAGL**2 + V2MAGL**2)
   ROS_HEAD_SURF(I,J)  = 0.099_EB + 0.095_EB*UMAG + 0.0025_EB*UMAG**2
 ENDIF
 
-IF (SUM_T_UAVG_LS >= UAVG_TIME) THEN    
-  UMAG = SQRT(U_LS_AVG(I,J)**2 + V_LS_AVG(I,J)**2)/REAL(NSUM_T_UAVG_LS,EB)
+!Find time average of Umag and use in empirical ROS vs umag equation
+!U_LS_SUM(I,J)  = SUM(U_LS_SUM(I:I+5,J))*0.2_EB + U2MAGL !Take spatial average before sum for time average
+!V_LS_SUM(I,J)  = SUM(V_LS_SUM(I:I+5,J))*0.2_EB + V2MAGL
+U_LS_SUM(I,J)  = U_LS_SUM(I,J) + U2MAGL !sum for time average
+V_LS_SUM(I,J)  = V_LS_SUM(I,J) + V2MAGL
+NSUM_T_UAVG_LS = NSUM_T_UAVG_LS + 1
+SUM_T_UAVG_LS  = SUM_T_UAVG_LS + DT_LS
+
+IF (FIRST_AVG_FLAG_LS == 0 .AND. UAVG_TIME /= 0.0_EB) THEN !using running average until time reaches duration of averaging time window
+  U_LS_AVG(I,J) = U_LS_SUM(I,J)/REAL(NSUM_T_UAVG_LS,EB)
+  V_LS_AVG(I,J) = V_LS_SUM(I,J)/REAL(NSUM_T_UAVG_LS,EB)
+  UMAG = SQRT(U_LS_AVG(I,J)**2 + V_LS_AVG(I,J)**2) !time average magnitude
+  ROS_HEAD_SURF(I,J)  = 0.099_EB + 0.095_EB*UMAG + 0.0025_EB*UMAG**2
+ENDIF
+
+IF (SUM_T_UAVG_LS >= UAVG_TIME .AND. UAVG_TIME /= 0.0_EB) THEN    
+  U_LS_AVG(I,J) = U_LS_SUM(I,J)/REAL(NSUM_T_UAVG_LS,EB)
+  V_LS_AVG(I,J) = V_LS_SUM(I,J)/REAL(NSUM_T_UAVG_LS,EB)
+  UMAG = SQRT(U_LS_AVG(I,J)**2 + V_LS_AVG(I,J)**2) !time average magnitude
   ROS_HEAD_SURF(I,J)  = 0.099_EB + 0.095_EB*UMAG + 0.0025_EB*UMAG**2
   NSUM_T_UAVG_LS = 0
   SUM_T_UAVG_LS  = 0.0_EB
   FIRST_AVG_FLAG_LS = 1
+  U_LS_SUM(I,J) = 0.0_EB
+  V_LS_SUM(I,J) = 0.0_EB
 ENDIF
 
 END SUBROUTINE ROSVSU_HEADROS
@@ -3596,7 +3616,7 @@ DO WHILE (TIME_LS < T_FINAL)
 !
 !-- Find flank-to-flank distance at base of fire assume symmetry about ymid and
 !   define spread rate based on AU head fire width dependence
- IF (.NOT. LSET_ELLIPSE) THEN
+ IF (.NOT. LSET_ELLIPSE .AND. SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL /= 'ROSvsU') THEN
 
 !--------------------- Specific to AU grassland fuel experiments --------------------
 !  IF (SF%VEG_LSET_HEADWIDTH_DEPENDENCE) THEN
@@ -3724,11 +3744,11 @@ DO WHILE (TIME_LS < T_FINAL)
 
 !---Ellipse assumption with AU grassland head fire ROS for infinite head width
       IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='AU GRASS' .AND. .NOT. SF%VEG_LSET_BURNER) &
-           CALL AUGRASS_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_SURF_EFFM)
+           CALL AUGRASS_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_SURF_EFFM,SF%VEG_LSET_UAVG_K)
 
 !---Ellipse assumption with WFDS derived head ROS as a fuction of a local wind velocity measure
       IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROSvsU' .AND. .NOT. SF%VEG_LSET_BURNER) &
-           CALL ROSVSU_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_UAVG_K,SF%VEG_LSET_UAVG_TIME)
+           CALL ROSVSU_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_SURF_EFFM,SF%VEG_LSET_UAVG_K,SF%VEG_LSET_UAVG_TIME)
 
 !---Ellipse assumption with Rothermel head fire ROS (== FARSITE) and compute ROS_FM10 if S&R crown model is implemented
       IF (SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROTHERMEL' .AND. .NOT. SF%VEG_LSET_BURNER) THEN 
@@ -3775,6 +3795,11 @@ DO WHILE (TIME_LS < T_FINAL)
       ENDIF
 
     ENDIF IF_ELLIPSE
+
+!Used ROSvsU model with cosine determination of ROS along fire perimenter
+    IF (.NOT. SF%VEG_LSET_ELLIPSE .AND. SF%VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL=='ROSvsU' .AND. .NOT. SF%VEG_LSET_BURNER) THEN    
+      CALL ROSVSU_HEADROS(NM,IIG,JJG,KKG,SF%VEG_LSET_SURF_HEIGHT,SF%VEG_LSET_SURF_EFFM,SF%VEG_LSET_UAVG_K,SF%VEG_LSET_UAVG_TIME)
+    ENDIF
 
 !--- Compute heat flux into atmosphere
     GRIDCELL_TIME  = 0.0_EB
@@ -4266,7 +4291,8 @@ CHARACTER(5), INTENT(IN) :: COMPUTE_ROS
 INTEGER :: I,J,IM1,IP1,JM1,JP1
 REAL(EB) :: COS_THETA_WIND,COS_THETA_SLOPE,COS_THETA_WIND_H,COS_THETA_WIND_B, &
             COS_THETA_SLOPE_H,COS_THETA_SLOPE_B,DPHIDX,DPHIDY,F_EAST,F_WEST,F_NORTH,F_SOUTH, &
-            GRAD_SLOPE_DOT_NORMAL_FIRELINE,MAG_F,MAG_SR,MAG_U,WIND_DOT_NORMAL_FIRELINE,NEXP_WIND
+            GRAD_SLOPE_DOT_NORMAL_FIRELINE,MAG_F,MAG_SR,MAG_U,WIND_DOT_NORMAL_FIRELINE,NEXP_WIND, &
+            ROS_NORMAL_FIRELINE
 REAL(EB) :: RAD_TO_DEGREE,DEGREES_SLOPE,SLOPE_FACTOR
 
 !Variables for elliptical propagation model
@@ -4429,7 +4455,7 @@ FLUX_ILOOP: DO I = 1,NX_LS
        MAG_SR = SQRT(SR_X_LS_P(I,J)**2 + SR_Y_LS_P(I,J)**2)   
 !WRITE(LU_OUTPUT,*)'vege levelset ros: i,j,mag_sr',i,j,mag_sr
    
-   ELSE !McArthur Spread Model
+   ELSE !use McArthur Model for slope and cosine for perimeter dependence
         
      WIND_DOT_NORMAL_FIRELINE = U_LS(I,J)*NORMAL_FIRELINE(1) + V_LS(I,J)*NORMAL_FIRELINE(2)
      MAG_U  = SQRT(U_LS(I,J)**2 + V_LS(I,J)**2)
@@ -4521,7 +4547,20 @@ FLUX_ILOOP: DO I = 1,NX_LS
            SR_Y_LS_P(I,J) = MAG_SR*NORMAL_FIRELINE(2) 
         !  MAG_SR_OUT(I,J) = MAG_SR
   
-   ENDIF !Ellipse or McArthur Spread 
+   ENDIF !Ellipse or McArthur/Cosine Spread 
+
+! Find local ROS normal to fireline using ROS vs Ulocal formula where Ulocal is an average computed
+! elsewhere. Doing this avoids assuming the ROS along the fire perimeter can be determined by assuming
+! the fireline spreads as an ellipse with a prescribed Lenght to Breadth ratio (as in FARSITE) or 
+! basing the ROS along the fire perimeter on the continuous passage from ROShead, ROSflank, ROSback 
+! using the cosine function. Preliminary runs in a 12m wide fuel strip show a choppy hrrpua head fire 
+! (too sensitive the to local gradient in phi) and a phi fireline that spreads where there's no veg defined.
+
+!  WIND_DOT_NORMAL_FIRELINE = U_LS_AVG(I,J)*NORMAL_FIRELINE(1) + V_LS_AVG(I,J)*NORMAL_FIRELINE(2)
+!  UMAG = ABS(WIND_DOT_NORMAL_FIRELINE)
+!  ROS_NORMAL_FIRELINE  = 0.099_EB + 0.095_EB*UMAG + 0.0025_EB*UMAG**2
+!  SR_X_LS_P(I,J) = ROS_NORMAL_FIRELINE*NORMAL_FIRELINE(1)
+!  SR_Y_LS_P(I,J) = ROS_NORMAL_FIRELINE*NORMAL_FIRELINE(2)
    
    DYN_SR_MAX = MAX(DYN_SR_MAX,MAG_SR) 
 
